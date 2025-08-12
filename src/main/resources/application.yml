@@ -1,0 +1,76 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: resign-system
+  
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/resign_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: mx)W-)YDkv.b6nE;
+  
+  # Redis配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+      database: 0
+      timeout: 10s
+  
+  # RabbitMQ配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1
+        concurrency: 3
+        max-concurrency: 10
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.example.resign.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: AUTO
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# MinIO配置
+minio:
+  endpoint: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: resign-apps
+
+# 重签名配置
+resign:
+  # 临时文件存储路径
+  temp-dir: /tmp/resign
+  # 签名工具路径
+  tools:
+    ios:
+      sign-tool: /usr/bin/codesign
+      verify-tool: /usr/bin/codesign
+    android:
+      sign-tool: /usr/local/bin/apksigner
+      zipalign-tool: /usr/local/bin/zipalign
+    harmony:
+      sign-tool: /usr/local/bin/hapsigntool
+  # 任务配置
+  task:
+    retry-count: 3
+    timeout-seconds: 1800
