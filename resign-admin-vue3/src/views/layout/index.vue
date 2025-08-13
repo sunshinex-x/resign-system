@@ -19,7 +19,7 @@
           active-text-color="#409EFF"
           router
         >
-          <sidebar-item v-for="route in routes" :key="route.path" :item="route" :base-path="route.path" />
+          <sidebar-item v-for="route in routes" :key="route.path" :item="route" :base-path="''" />
         </el-menu>
       </el-scrollbar>
     </div>

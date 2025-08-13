@@ -15,9 +15,14 @@ const routes = [
     path: '/',
     component: Layout,
     redirect: '/dashboard',
+    meta: { hidden: true }
+  },
+  {
+    path: '/dashboard',
+    component: Layout,
     children: [
       {
-        path: 'dashboard',
+        path: '',
         name: 'Dashboard',
         component: () => import('@/views/dashboard/index.vue'),
         meta: { title: '控制台', icon: 'Odometer' }
@@ -28,7 +33,7 @@ const routes = [
     path: '/task',
     component: Layout,
     redirect: '/task/list',
-    meta: { title: '任务管理', icon: 'Document' },
+    meta: { title: '任务管理', icon: 'Document', alwaysShow: true },
     children: [
       {
         path: 'list',
@@ -53,10 +58,9 @@ const routes = [
   {
     path: '/statistics',
     component: Layout,
-    redirect: '/statistics/index',
     children: [
       {
-        path: 'index',
+        path: '',
         name: 'Statistics',
         component: () => import('@/views/statistics/index.vue'),
         meta: { title: '统计分析', icon: 'DataAnalysis' }
@@ -67,7 +71,7 @@ const routes = [
     path: '/system',
     component: Layout,
     redirect: '/system/log',
-    meta: { title: '系统管理', icon: 'Setting' },
+    meta: { title: '系统管理', icon: 'Setting', alwaysShow: true },
     children: [
       {
         path: 'log',
@@ -88,10 +92,10 @@ const routes = [
     component: () => import('@/views/error/404.vue'),
     meta: { hidden: true }
   },
-  { 
-    path: '/:pathMatch(.*)*', 
-    redirect: '/404', 
-    meta: { hidden: true } 
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/404',
+    meta: { hidden: true }
   }
 ]
 
@@ -101,10 +105,10 @@ const router = createRouter({
 })
 
 // 全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // 设置页面标题
   document.title = to.meta.title ? `${to.meta.title} - 应用重签名管理系统` : '应用重签名管理系统'
-  
+
   // 这里可以添加登录验证等逻辑
   next()
 })

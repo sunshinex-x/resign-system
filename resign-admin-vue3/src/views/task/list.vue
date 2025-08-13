@@ -74,7 +74,7 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column prop="id" label="任务ID" width="220" show-overflow-tooltip />
+      <el-table-column prop="taskId" label="任务ID" width="220" show-overflow-tooltip />
       <el-table-column prop="appType" label="应用类型" width="100">
         <template #default="{row}">
           <el-tag
@@ -224,13 +224,13 @@ const handleCreate = () => {
 
 // 查看详情
 const handleDetail = (row) => {
-  router.push(`/task/detail/${row.id}`)
+  router.push(`/task/detail/${row.taskId}`)
 }
 
 // 重试任务
 const handleRetry = async (row) => {
   try {
-    await taskStore.retryFailedTask(row.id)
+    await taskStore.retryFailedTask(row.taskId)
     ElMessage.success('任务重试已提交')
     fetchTaskList()
   } catch (error) {
@@ -246,7 +246,7 @@ const handleDelete = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await taskStore.batchDeleteTasks([row.id])
+      await taskStore.batchDeleteTasks([row.taskId])
       ElMessage.success('删除成功')
       fetchTaskList()
     } catch (error) {
@@ -268,7 +268,7 @@ const handleBatchDelete = () => {
     type: 'warning'
   }).then(async () => {
     try {
-      const taskIds = selectedTasks.value.map(task => task.id)
+      const taskIds = selectedTasks.value.map(task => task.taskId)
       await taskStore.batchDeleteTasks(taskIds)
       ElMessage.success('批量删除成功')
       fetchTaskList()

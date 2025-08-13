@@ -89,7 +89,7 @@
         </div>
       </template>
       <el-table :data="recentTasks" style="width: 100%">
-        <el-table-column prop="id" label="任务ID" width="220" show-overflow-tooltip />
+        <el-table-column prop="taskId" label="任务ID" width="220" show-overflow-tooltip />
         <el-table-column prop="appType" label="应用类型" width="100">
           <template #default="{row}">
             <el-tag
@@ -294,7 +294,9 @@ const getLast7Days = () => {
 const fetchTaskStats = async () => {
   try {
     const data = await taskStore.fetchTaskStats()
-    Object.assign(taskStats, data)
+    if (data) {
+      Object.assign(taskStats, data)
+    }
   } catch (error) {
     console.error('获取任务统计数据失败:', error)
   }
@@ -303,10 +305,15 @@ const fetchTaskStats = async () => {
 // 获取最近任务
 const fetchRecentTasks = async () => {
   try {
-    const { data } = await taskStore.fetchTaskList({ current: 1, size: 5 })
-    recentTasks.value = data.records
+    const data = await taskStore.fetchTaskList({ current: 1, size: 5 })
+    if (data && data.records) {
+      recentTasks.value = data.records
+    } else {
+      recentTasks.value = []
+    }
   } catch (error) {
     console.error('获取最近任务失败:', error)
+    recentTasks.value = []
   }
 }
 
@@ -317,7 +324,7 @@ const goToTaskList = () => {
 
 // 跳转到任务详情
 const goToTaskDetail = (row) => {
-  router.push(`/task/detail/${row.id}`)
+  router.push(`/task/detail/${row.taskId}`)
 }
 
 // 窗口大小变化时重新调整图表大小

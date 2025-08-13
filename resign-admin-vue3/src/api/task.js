@@ -56,6 +56,6 @@ export function deleteTaskBatch(taskIds) {
   return request({
     url: '/api/resign/tasks/batch',
     method: 'delete',
-    data: { taskIds }
+    data: taskIds
   })
 }

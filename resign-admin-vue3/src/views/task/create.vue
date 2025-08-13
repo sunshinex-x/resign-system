@@ -20,8 +20,12 @@
           <el-input v-model="taskForm.originalPackageUrl" placeholder="请输入原始包地址" />
         </el-form-item>
         
-        <el-form-item label="证书ID" prop="certificateId">
-          <el-input v-model="taskForm.certificateId" placeholder="请输入证书ID" />
+        <el-form-item label="证书地址" prop="certificateUrl">
+          <el-input v-model="taskForm.certificateUrl" placeholder="请输入证书地址" />
+        </el-form-item>
+        
+        <el-form-item label="证书密码" prop="certificatePassword">
+          <el-input v-model="taskForm.certificatePassword" type="password" placeholder="请输入证书密码" />
         </el-form-item>
         
         <el-form-item label="描述信息">
@@ -56,8 +60,8 @@ const taskFormRef = ref(null)
 const taskForm = reactive({
   appType: '',
   originalPackageUrl: '',
-  certificateId: '',
-  description: '',
+  certificateUrl: '',
+  certificatePassword: '',
   callbackUrl: ''
 })
 
@@ -69,8 +73,11 @@ const rules = {
   originalPackageUrl: [
     { required: true, message: '请输入原始包地址', trigger: 'blur' }
   ],
-  certificateId: [
-    { required: true, message: '请输入证书ID', trigger: 'blur' }
+  certificateUrl: [
+    { required: true, message: '请输入证书地址', trigger: 'blur' }
+  ],
+  certificatePassword: [
+    { required: true, message: '请输入证书密码', trigger: 'blur' }
   ]
 }
 

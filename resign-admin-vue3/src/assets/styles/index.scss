@@ -1,19 +1,87 @@
 /* 全局样式文件 */
 
 /* 重置样式 */
-html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed, 
-figure, figcaption, footer, header, hgroup, 
-menu, nav, output, ruby, section, summary,
-time, mark, audio, video {
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
   margin: 0;
   padding: 0;
   border: 0;
@@ -23,7 +91,8 @@ time, mark, audio, video {
 }
 
 /* 基础样式 */
-html, body {
+html,
+body {
   height: 100%;
   color: #333;
   font-size: 14px;
@@ -49,16 +118,34 @@ html, body {
 }
 
 /* 间距类 */
-.mt-10 { margin-top: 10px; }
-.mt-20 { margin-top: 20px; }
-.mb-10 { margin-bottom: 10px; }
-.mb-20 { margin-bottom: 20px; }
-.ml-10 { margin-left: 10px; }
-.mr-10 { margin-right: 10px; }
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.ml-10 {
+  margin-left: 10px;
+}
+
+.mr-10 {
+  margin-right: 10px;
+}
 
 /* 表格样式 */
 .el-table {
   margin-top: 15px;
+
   &.striped {
     --el-table-row-hover-bg-color: var(--el-color-primary-light-9);
   }
@@ -76,11 +163,11 @@ html, body {
 /* 卡片样式 */
 .el-card {
   margin-bottom: 20px;
-  
+
   &.is-always-shadow {
     box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
   }
-  
+
   .el-card__header {
     padding: 15px 20px;
     font-weight: bold;
@@ -92,9 +179,174 @@ html, body {
 
 /* 状态标签颜色 */
 .status-tag {
-  &.success { color: #67c23a; }
-  &.warning { color: #e6a23c; }
-  &.danger { color: #f56c6c; }
-  &.info { color: #909399; }
-  &.primary { color: #409eff; }
+  &.success {
+    color: #67c23a;
+  }
+
+  &.warning {
+    color: #e6a23c;
+  }
+
+  &.danger {
+    color: #f56c6c;
+  }
+
+  &.info {
+    color: #909399;
+  }
+
+  &.primary {
+    color: #409eff;
+  }
+}
+
+// 通用样式
+
+.app-container {
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-operations {
+  margin: 15px 0;
+}
+
+.pagination-container {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.text-muted {
+  color: #909399;
+}
+
+.compact-form {
+  .el-form-item {
+    margin-bottom: 15px;
+  }
+}
+
+// 统计卡片样式
+.stat-card {
+  height: 120px;
+
+  &.success {
+    .stat-icon {
+      background-color: rgba(103, 194, 58, 0.2);
+      color: #67c23a;
+    }
+  }
+
+  &.warning {
+    .stat-icon {
+      background-color: rgba(230, 162, 60, 0.2);
+      color: #e6a23c;
+    }
+  }
+
+  &.danger {
+    .stat-icon {
+      background-color: rgba(245, 108, 108, 0.2);
+      color: #f56c6c;
+    }
+  }
+
+  .stat-card-content {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(64, 158, 255, 0.2);
+    color: #409eff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+    margin-right: 20px;
+  }
+
+  .stat-info {
+    flex: 1;
+  }
+
+  .stat-title {
+    font-size: 16px;
+    color: #909399;
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #303133;
+  }
+}
+
+// 成功率样式
+.success-rate {
+  text-align: center;
+  padding: 20px;
+
+  .rate-value {
+    font-size: 48px;
+    font-weight: bold;
+    color: #67c23a;
+    margin-bottom: 10px;
+  }
+
+  .rate-desc {
+    font-size: 16px;
+    color: #909399;
+  }
+}
+
+// 应用类型统计样式
+.app-type-stats {
+  padding: 20px;
+
+  .type-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .type-label {
+      color: #606266;
+    }
+
+    .type-count {
+      font-weight: bold;
+      color: #303133;
+    }
+  }
+}
+
+// 异常堆栈样式
+.exception-stack {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  background-color: #f5f7fa;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
 }

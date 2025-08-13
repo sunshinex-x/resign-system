@@ -130,20 +130,32 @@ public class ResignTaskServiceImpl extends ServiceImpl<ResignTaskMapper, ResignT
     public Map<String, Long> countTaskByStatus() {
         Map<String, Long> result = new HashMap<>();
         
-        // 获取所有状态枚举值
-        Arrays.stream(TaskStatus.values()).forEach(status -> {
-            // 构建查询条件
-            LambdaQueryWrapper<ResignTask> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(ResignTask::getStatus, status.name());
-            
-            // 查询数量
-            long count = count(queryWrapper);
-            result.put(status.name(), count);
-        });
+        // 查询各状态的任务数量
+        LambdaQueryWrapper<ResignTask> pendingWrapper = new LambdaQueryWrapper<>();
+        pendingWrapper.eq(ResignTask::getStatus, TaskStatus.PENDING.getStatus());
+        long pendingCount = count(pendingWrapper);
+        
+        LambdaQueryWrapper<ResignTask> processingWrapper = new LambdaQueryWrapper<>();
+        processingWrapper.eq(ResignTask::getStatus, TaskStatus.PROCESSING.getStatus());
+        long processingCount = count(processingWrapper);
+        
+        LambdaQueryWrapper<ResignTask> successWrapper = new LambdaQueryWrapper<>();
+        successWrapper.eq(ResignTask::getStatus, TaskStatus.SUCCESS.getStatus());
+        long successCount = count(successWrapper);
+        
+        LambdaQueryWrapper<ResignTask> failedWrapper = new LambdaQueryWrapper<>();
+        failedWrapper.eq(ResignTask::getStatus, TaskStatus.FAILED.getStatus());
+        long failedCount = count(failedWrapper);
         
         // 查询总数
-        long total = count();
-        result.put("TOTAL", total);
+        long totalCount = count();
+        
+        // 按前端期望的格式返回
+        result.put("totalCount", totalCount);
+        result.put("pendingCount", pendingCount);
+        result.put("processingCount", processingCount);
+        result.put("successCount", successCount);
+        result.put("failedCount", failedCount);
         
         return result;
     }

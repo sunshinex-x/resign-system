@@ -10,7 +10,7 @@
       
       <div v-if="taskDetail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="任务ID" :span="2">{{ taskDetail.id }}</el-descriptions-item>
+          <el-descriptions-item label="任务ID" :span="2">{{ taskDetail.taskId }}</el-descriptions-item>
           <el-descriptions-item label="应用类型">
             <el-tag
               :type="taskDetail.appType === 'IOS' ? 'primary' : (taskDetail.appType === 'ANDROID' ? 'success' : 'warning')"

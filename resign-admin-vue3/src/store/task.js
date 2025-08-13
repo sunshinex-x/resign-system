@@ -15,24 +15,27 @@ export const useTaskStore = defineStore('task', {
       failedCount: 0
     }
   }),
-  
+
   actions: {
     // 获取任务列表
     async fetchTaskList(params) {
       this.loading = true
       try {
         const { data } = await getTaskList(params)
-        this.taskList = data.records
-        this.total = data.total
+        this.taskList = data.records || []
+        this.total = data.total || 0
         return data
       } catch (error) {
         console.error('获取任务列表失败:', error)
-        throw error
+        // 出错时返回空数据结构
+        this.taskList = []
+        this.total = 0
+        return { records: [], total: 0 }
       } finally {
         this.loading = false
       }
     },
-    
+
     // 获取任务详情
     async fetchTaskDetail(taskId) {
       try {
@@ -44,7 +47,7 @@ export const useTaskStore = defineStore('task', {
         throw error
       }
     },
-    
+
     // 创建任务
     async createNewTask(taskData) {
       try {
@@ -55,7 +58,7 @@ export const useTaskStore = defineStore('task', {
         throw error
       }
     },
-    
+
     // 重试任务
     async retryFailedTask(taskId) {
       try {
@@ -66,31 +69,45 @@ export const useTaskStore = defineStore('task', {
         throw error
       }
     },
-    
+
     // 批量删除任务
     async batchDeleteTasks(taskIds) {
       try {
         await deleteTaskBatch(taskIds)
         // 删除成功后更新列表
-        this.taskList = this.taskList.filter(task => !taskIds.includes(task.id))
+        this.taskList = this.taskList.filter(task => !taskIds.includes(task.taskId))
       } catch (error) {
         console.error('批量删除任务失败:', error)
         throw error
       }
     },
-    
+
     // 获取任务统计数据
     async fetchTaskStats() {
       try {
         const { data } = await getTaskStats()
-        this.taskStats = data
-        return data
+        this.taskStats = {
+          totalCount: data.totalCount || 0,
+          pendingCount: data.pendingCount || 0,
+          processingCount: data.processingCount || 0,
+          successCount: data.successCount || 0,
+          failedCount: data.failedCount || 0
+        }
+        return this.taskStats
       } catch (error) {
         console.error('获取任务统计数据失败:', error)
-        throw error
+        // 出错时返回默认统计数据
+        this.taskStats = {
+          totalCount: 0,
+          pendingCount: 0,
+          processingCount: 0,
+          successCount: 0,
+          failedCount: 0
+        }
+        return this.taskStats
       }
     },
-    
+
     // 清除当前任务
     clearCurrentTask() {
       this.currentTask = null
