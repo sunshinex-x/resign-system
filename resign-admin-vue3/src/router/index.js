@@ -55,15 +55,30 @@ const routes = [
       }
     ]
   },
+
   {
-    path: '/statistics',
+    path: '/user',
     component: Layout,
+    redirect: '/user/list',
+    meta: { title: '用户管理', icon: 'User', alwaysShow: true },
     children: [
       {
-        path: '',
-        name: 'Statistics',
-        component: () => import('@/views/statistics/index.vue'),
-        meta: { title: '统计分析', icon: 'DataAnalysis' }
+        path: 'list',
+        name: 'UserList',
+        component: () => import('@/views/user/list.vue'),
+        meta: { title: '用户列表', icon: 'UserFilled' }
+      },
+      {
+        path: 'role',
+        name: 'RoleList',
+        component: () => import('@/views/user/role.vue'),
+        meta: { title: '角色管理', icon: 'Avatar' }
+      },
+      {
+        path: 'permission',
+        name: 'PermissionList',
+        component: () => import('@/views/user/permission.vue'),
+        meta: { title: '权限管理', icon: 'Key' }
       }
     ]
   },

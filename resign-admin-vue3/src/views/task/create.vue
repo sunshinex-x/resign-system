@@ -29,7 +29,7 @@
         </el-form-item>
         
         <el-form-item label="描述信息">
-          <el-input v-model="taskForm.description" type="textarea" rows="4" placeholder="请输入任务描述信息" />
+          <el-input v-model="taskForm.description" type="textarea" :rows="4" placeholder="请输入任务描述信息" />
         </el-form-item>
         
         <el-form-item label="回调地址">
