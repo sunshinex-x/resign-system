@@ -1,25 +1,15 @@
 <template>
   <div class="app-container">
     <!-- 搜索区域 -->
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>搜索条件</span>
-          <div>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button @click="resetSearch">重置</el-button>
-          </div>
-        </div>
-      </template>
-      
-      <el-form :model="searchForm" label-width="100px" class="compact-form">
+    <el-card class="search-card">
+      <el-form :model="searchForm" label-width="80px" class="search-form">
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="5">
             <el-form-item label="任务ID">
               <el-input v-model="searchForm.taskId" placeholder="请输入任务ID" clearable />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="5">
             <el-form-item label="应用类型">
               <el-select v-model="searchForm.appType" placeholder="请选择应用类型" clearable style="width: 100%">
                 <el-option label="iOS" value="IOS" />
@@ -28,7 +18,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="5">
             <el-form-item label="任务状态">
               <el-select v-model="searchForm.status" placeholder="请选择任务状态" clearable style="width: 100%">
                 <el-option label="等待中" value="PENDING" />
@@ -38,9 +28,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="5">
             <el-form-item label="创建时间">
               <el-date-picker
                 v-model="dateRange"
@@ -51,6 +39,12 @@
                 value-format="YYYY-MM-DD"
                 style="width: 100%"
               />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label=" " class="search-buttons">
+              <el-button type="primary" @click="handleSearch" icon="Search">搜索</el-button>
+              <el-button @click="resetSearch" icon="Refresh">重置</el-button>
             </el-form-item>
           </el-col>
         </el-row>
@@ -65,14 +59,14 @@
     </div>
     
     <!-- 表格 -->
-    <el-table
-      v-loading="taskStore.loading"
-      :data="taskStore.taskList"
-      border
-      stripe
-      style="width: 100%"
-      @selection-change="handleSelectionChange"
-    >
+    <el-card class="table-card">
+      <el-table
+        v-loading="taskStore.loading"
+        :data="taskStore.taskList"
+        stripe
+        class="task-table"
+        @selection-change="handleSelectionChange"
+      >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column prop="taskId" label="任务ID" width="220" show-overflow-tooltip />
       <el-table-column prop="appType" label="应用类型" width="100">
@@ -133,20 +127,21 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
-    
-    <!-- 分页 -->
-    <div class="pagination-container">
-      <el-pagination
-        v-model:current-page="pagination.current"
-        v-model:page-size="pagination.size"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="taskStore.total"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
-    </div>
+      </el-table>
+      
+      <!-- 分页 -->
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="pagination.current"
+          v-model:page-size="pagination.size"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="taskStore.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
+    </el-card>
   </div>
 </template>
 
@@ -306,20 +301,59 @@ onMounted(() => {
   padding: 20px;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.search-card {
+  margin-bottom: 20px;
+  
+  .search-form {
+    .el-form-item {
+      margin-bottom: 0;
+    }
+    
+    .search-buttons {
+      .el-form-item__content {
+        justify-content: flex-end;
+        align-items: center;
+        
+        .el-button {
+          margin-left: 12px;
+        }
+      }
+    }
+  }
 }
 
 .table-operations {
-  margin: 15px 0;
+  margin-bottom: 20px;
+  
+  .el-button {
+    margin-right: 12px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
 }
 
-.pagination-container {
-  margin-top: 15px;
-  display: flex;
-  justify-content: flex-end;
+.table-card {
+  .task-table {
+    width: 100%;
+    
+    .el-table__header {
+      th {
+        background: #fafbfc !important;
+        color: #374151;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .pagination-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 
 .text-muted {

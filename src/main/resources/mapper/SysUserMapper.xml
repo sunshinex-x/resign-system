@@ -71,4 +71,18 @@
         WHERE u.id = #{userId}
     </select>
 
+    <select id="countByEmailExcludeUserId" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_user
+        WHERE email = #{email}
+        AND id != #{userId}
+    </select>
+
+    <select id="countByPhoneExcludeUserId" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_user
+        WHERE phone = #{phone}
+        AND id != #{userId}
+    </select>
+
 </mapper>

@@ -2,10 +2,14 @@ package com.example.resign.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.resign.model.dto.ChangePasswordDTO;
 import com.example.resign.model.dto.SysUserDTO;
+import com.example.resign.model.dto.UserProfileDTO;
 import com.example.resign.model.vo.SysUserVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 系统用户服务接口
@@ -81,4 +85,58 @@ public interface SysUserService {
      * @return 是否成功
      */
     boolean resetPassword(Long userId, String password);
+    
+    /**
+     * 更新个人信息
+     *
+     * @param userId 用户ID
+     * @param params 更新参数
+     * @return 用户信息
+     */
+    SysUserVO updateProfile(Long userId, Map<String, String> params);
+    
+    /**
+     * 更新个人信息（使用DTO）
+     *
+     * @param userId     用户ID
+     * @param profileDTO 个人信息DTO
+     * @return 用户信息
+     */
+    SysUserVO updateProfile(Long userId, UserProfileDTO profileDTO);
+    
+    /**
+     * 获取当前用户信息
+     *
+     * @param userId 用户ID
+     * @return 用户信息
+     */
+    SysUserVO getCurrentUserProfile(Long userId);
+    
+    /**
+     * 修改个人密码
+     *
+     * @param userId      用户ID
+     * @param oldPassword 原密码
+     * @param newPassword 新密码
+     * @return 是否成功
+     */
+    boolean changePassword(Long userId, String oldPassword, String newPassword);
+    
+    /**
+     * 修改个人密码（使用DTO）
+     *
+     * @param userId        用户ID
+     * @param passwordDTO   密码DTO
+     * @return 是否成功
+     */
+    boolean changePassword(Long userId, ChangePasswordDTO passwordDTO);
+    
+    /**
+     * 上传头像
+     *
+     * @param userId 用户ID
+     * @param avatar 头像文件
+     * @return 头像URL
+     */
+    String uploadAvatar(Long userId, MultipartFile avatar);
 }

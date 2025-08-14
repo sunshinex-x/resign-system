@@ -1,15 +1,18 @@
 <template>
   <div class="app-container">
     <!-- 重签名配置 -->
-    <el-card>
+    <el-card class="config-card">
       <template #header>
         <div class="card-header">
           <span>重签名配置</span>
-          <el-button type="primary" @click="saveResignConfig">保存配置</el-button>
+          <div class="header-buttons">
+            <el-button type="success" @click="refreshResignConfig" icon="Refresh">刷新</el-button>
+            <el-button type="primary" @click="saveResignConfig" icon="Check">保存配置</el-button>
+          </div>
         </div>
       </template>
       
-      <el-form :model="resignConfig" label-width="150px">
+      <el-form :model="resignConfig" label-width="150px" class="config-form">
         <el-form-item label="临时文件目录">
           <el-input v-model="resignConfig.tempDir" placeholder="请输入临时文件存储目录" />
         </el-form-item>
@@ -32,15 +35,18 @@
     </el-card>
     
     <!-- MinIO配置 -->
-    <el-card style="margin-top: 20px;">
+    <el-card class="config-card" style="margin-top: 20px;">
       <template #header>
         <div class="card-header">
           <span>MinIO存储配置</span>
-          <el-button type="primary" @click="saveMinioConfig">保存配置</el-button>
+          <div class="header-buttons">
+            <el-button type="success" @click="refreshMinioConfig" icon="Refresh">刷新</el-button>
+            <el-button type="primary" @click="saveMinioConfig" icon="Check">保存配置</el-button>
+          </div>
         </div>
       </template>
       
-      <el-form :model="minioConfig" label-width="150px">
+      <el-form :model="minioConfig" label-width="150px" class="config-form">
         <el-form-item label="服务端点">
           <el-input v-model="minioConfig.endpoint" placeholder="请输入MinIO服务端点" />
         </el-form-item>
@@ -60,15 +66,18 @@
     </el-card>
     
     <!-- RabbitMQ配置 -->
-    <el-card style="margin-top: 20px;">
+    <el-card class="config-card" style="margin-top: 20px;">
       <template #header>
         <div class="card-header">
           <span>RabbitMQ消息队列配置</span>
-          <el-button type="primary" @click="saveRabbitConfig">保存配置</el-button>
+          <div class="header-buttons">
+            <el-button type="success" @click="refreshRabbitConfig" icon="Refresh">刷新</el-button>
+            <el-button type="primary" @click="saveRabbitConfig" icon="Check">保存配置</el-button>
+          </div>
         </div>
       </template>
       
-      <el-form :model="rabbitConfig" label-width="150px">
+      <el-form :model="rabbitConfig" label-width="150px" class="config-form">
         <el-form-item label="服务器地址">
           <el-input v-model="rabbitConfig.host" placeholder="请输入RabbitMQ服务器地址" />
         </el-form-item>
@@ -91,7 +100,7 @@
     </el-card>
     
     <!-- 系统信息 -->
-    <el-card style="margin-top: 20px;">
+    <el-card class="config-card" style="margin-top: 20px;">
       <template #header>
         <div class="card-header">
           <span>系统信息</span>
@@ -157,16 +166,34 @@ const systemInfo = reactive({
   activeThreads: 25
 })
 
+// 刷新重签名配置
+const refreshResignConfig = () => {
+  // 模拟刷新配置
+  ElMessage.success('重签名配置刷新成功')
+}
+
 // 保存重签名配置
 const saveResignConfig = () => {
   // 模拟保存配置
   ElMessage.success('重签名配置保存成功')
 }
 
+// 刷新MinIO配置
+const refreshMinioConfig = () => {
+  // 模拟刷新配置
+  ElMessage.success('MinIO配置刷新成功')
+}
+
 // 保存MinIO配置
 const saveMinioConfig = () => {
   // 模拟保存配置
   ElMessage.success('MinIO配置保存成功')
+}
+
+// 刷新RabbitMQ配置
+const refreshRabbitConfig = () => {
+  // 模拟刷新配置
+  ElMessage.success('RabbitMQ配置刷新成功')
 }
 
 // 保存RabbitMQ配置
@@ -205,12 +232,35 @@ onMounted(() => {
 <style lang="scss" scoped>
 .app-container {
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.config-card {
+  width: 100%;
+  max-width: 800px;
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .header-buttons {
+      .el-button {
+        margin-left: 12px;
+      }
+    }
+  }
+  
+  .config-form {
+    max-width: 600px;
+    margin: 0 auto;
+    
+    .el-form-item {
+      margin-bottom: 24px;
+    }
+  }
 }
 
 .config-content {

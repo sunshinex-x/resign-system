@@ -3,7 +3,7 @@ package com.example.resign.model.dto;
 import lombok.Data;
 
 /**
- * 重签名任务查询条件DTO
+ * 重签名任务查询DTO
  */
 @Data
 public class ResignTaskQueryDTO {
@@ -19,19 +19,19 @@ public class ResignTaskQueryDTO {
     private Integer size = 10;
 
     /**
-     * 应用类型：IOS、ANDROID、HARMONY
+     * 任务ID
+     */
+    private String taskId;
+
+    /**
+     * 应用类型
      */
     private String appType;
 
     /**
-     * 任务状态：PENDING、PROCESSING、SUCCESS、FAILED
+     * 任务状态
      */
     private String status;
-
-    /**
-     * 任务ID
-     */
-    private String taskId;
 
     /**
      * 开始时间
@@ -42,4 +42,9 @@ public class ResignTaskQueryDTO {
      * 结束时间
      */
     private String endTime;
+
+    /**
+     * 创建人
+     */
+    private String createBy;
 }

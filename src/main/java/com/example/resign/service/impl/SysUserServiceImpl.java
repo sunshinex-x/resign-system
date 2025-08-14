@@ -11,16 +11,21 @@ import com.example.resign.entity.SysUser;
 import com.example.resign.entity.SysUserRole;
 import com.example.resign.mapper.SysUserMapper;
 import com.example.resign.mapper.SysUserRoleMapper;
+import com.example.resign.model.dto.ChangePasswordDTO;
 import com.example.resign.model.dto.SysUserDTO;
+import com.example.resign.model.dto.UserProfileDTO;
 import com.example.resign.model.vo.SysUserVO;
+import com.example.resign.service.FileService;
 import com.example.resign.service.SysUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 系统用户服务实现类
@@ -32,6 +37,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     private final SysUserMapper sysUserMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
+    private final FileService fileService;
 
     @Override
     public IPage<SysUserVO> pageUsers(Page<SysUserVO> page, String username, String email, Integer status) {
@@ -177,5 +183,250 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         user.setUpdateTime(LocalDateTime.now());
         user.setUpdateBy("admin");
         return updateById(user);
+    }
+
+    @Override
+    public SysUserVO updateProfile(Long userId, Map<String, String> params) {
+        // 查询用户是否存在
+        SysUser existingUser = getById(userId);
+        if (existingUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        // 验证邮箱格式
+        String email = params.get("email");
+        if (StrUtil.isNotBlank(email)) {
+            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                throw new RuntimeException("邮箱格式不正确");
+            }
+            
+            // 检查邮箱是否已被其他用户使用
+            if (sysUserMapper.countByEmailExcludeUserId(email, userId) > 0) {
+                throw new RuntimeException("邮箱已被其他用户使用");
+            }
+        }
+
+        // 验证手机号格式
+        String phone = params.get("phone");
+        if (StrUtil.isNotBlank(phone)) {
+            if (!phone.matches("^1[3-9]\\d{9}$")) {
+                throw new RuntimeException("手机号格式不正确");
+            }
+            
+            // 检查手机号是否已被其他用户使用
+            if (sysUserMapper.countByPhoneExcludeUserId(phone, userId) > 0) {
+                throw new RuntimeException("手机号已被其他用户使用");
+            }
+        }
+
+        // 更新用户信息
+        SysUser user = new SysUser();
+        user.setId(userId);
+        
+        // 只更新非空字段
+        String nickname = params.get("nickname");
+        if (StrUtil.isNotBlank(nickname)) {
+            if (nickname.length() > 50) {
+                throw new RuntimeException("昵称长度不能超过50个字符");
+            }
+            user.setNickname(nickname.trim());
+        }
+        
+        if (StrUtil.isNotBlank(email)) {
+            user.setEmail(email.trim());
+        }
+        
+        if (StrUtil.isNotBlank(phone)) {
+            user.setPhone(phone.trim());
+        }
+        
+        user.setUpdateTime(LocalDateTime.now());
+        user.setUpdateBy(String.valueOf(userId)); // 使用当前用户ID作为更新人
+
+        boolean updated = updateById(user);
+        if (!updated) {
+            throw new RuntimeException("更新个人信息失败");
+        }
+
+        log.info("用户 {} 更新个人信息成功", userId);
+        
+        // 返回更新后的用户信息
+        return getUserById(userId);
+    }
+
+    @Override
+    public boolean changePassword(Long userId, String oldPassword, String newPassword) {
+        // 查询用户
+        SysUser user = getById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        // 验证原密码
+        String encryptedOldPassword = DigestUtil.md5Hex(oldPassword);
+        if (!encryptedOldPassword.equals(user.getPassword())) {
+            throw new RuntimeException("原密码错误");
+        }
+
+        // 验证新密码强度
+        if (newPassword.length() < 6) {
+            throw new RuntimeException("新密码长度不能少于6位");
+        }
+        
+        if (newPassword.length() > 20) {
+            throw new RuntimeException("新密码长度不能超过20位");
+        }
+        
+        // 检查新密码是否与原密码相同
+        if (oldPassword.equals(newPassword)) {
+            throw new RuntimeException("新密码不能与原密码相同");
+        }
+
+        // 更新密码
+        SysUser updateUser = new SysUser();
+        updateUser.setId(userId);
+        updateUser.setPassword(DigestUtil.md5Hex(newPassword));
+        updateUser.setUpdateTime(LocalDateTime.now());
+        updateUser.setUpdateBy(String.valueOf(userId));
+
+        boolean updated = updateById(updateUser);
+        if (updated) {
+            log.info("用户 {} 修改密码成功", userId);
+        }
+        
+        return updated;
+    }
+
+    @Override
+    public String uploadAvatar(Long userId, MultipartFile avatar) {
+        try {
+            // 验证文件类型
+            String contentType = avatar.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new RuntimeException("请上传图片文件");
+            }
+
+            // 验证文件大小（2MB）
+            if (avatar.getSize() > 2 * 1024 * 1024) {
+                throw new RuntimeException("图片大小不能超过2MB");
+            }
+
+            // 生成文件名
+            String originalFilename = avatar.getOriginalFilename();
+            String extension = originalFilename != null ? 
+                originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+            String objectName = "avatars/avatar_" + userId + "_" + System.currentTimeMillis() + extension;
+
+            // 删除旧头像
+            SysUser existingUser = getById(userId);
+            if (existingUser != null && StrUtil.isNotBlank(existingUser.getAvatar())) {
+                try {
+                    String oldObjectName = fileService.getObjectNameFromUrl(existingUser.getAvatar());
+                    if (StrUtil.isNotBlank(oldObjectName)) {
+                        fileService.deleteFile(oldObjectName);
+                        log.info("删除用户 {} 的旧头像: {}", userId, oldObjectName);
+                    }
+                } catch (Exception e) {
+                    log.warn("删除旧头像失败: {}", e.getMessage());
+                }
+            }
+
+            // 上传文件到MinIO
+            String avatarUrl = fileService.uploadFile(avatar.getInputStream(), objectName, contentType);
+
+            // 验证URL长度，防止数据库字段溢出
+            if (avatarUrl.length() > 1000) {
+                log.warn("头像URL长度超过限制: {} 字符", avatarUrl.length());
+                throw new RuntimeException("头像URL过长，请联系管理员");
+            }
+
+            // 更新用户头像
+            SysUser user = new SysUser();
+            user.setId(userId);
+            user.setAvatar(avatarUrl);
+            user.setUpdateTime(LocalDateTime.now());
+            user.setUpdateBy(String.valueOf(userId));
+
+            boolean updated = updateById(user);
+            if (!updated) {
+                throw new RuntimeException("更新头像失败");
+            }
+
+            log.info("用户 {} 上传头像成功: {}", userId, avatarUrl);
+            return avatarUrl;
+        } catch (Exception e) {
+            log.error("用户 {} 上传头像失败", userId, e);
+            throw new RuntimeException("头像上传失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public SysUserVO getCurrentUserProfile(Long userId) {
+        SysUserVO userProfile = getUserById(userId);
+        if (userProfile == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 清除敏感信息
+        // 注意：SysUserVO中不应该包含密码字段，这里只是确保安全
+        log.info("获取用户 {} 的个人信息", userId);
+        
+        return userProfile;
+    }
+
+    @Override
+    public SysUserVO updateProfile(Long userId, UserProfileDTO profileDTO) {
+        // 查询用户是否存在
+        SysUser existingUser = getById(userId);
+        if (existingUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        // 验证邮箱唯一性
+        if (StrUtil.isNotBlank(profileDTO.getEmail())) {
+            if (sysUserMapper.countByEmailExcludeUserId(profileDTO.getEmail(), userId) > 0) {
+                throw new RuntimeException("邮箱已被其他用户使用");
+            }
+        }
+
+        // 验证手机号唯一性
+        if (StrUtil.isNotBlank(profileDTO.getPhone())) {
+            if (sysUserMapper.countByPhoneExcludeUserId(profileDTO.getPhone(), userId) > 0) {
+                throw new RuntimeException("手机号已被其他用户使用");
+            }
+        }
+
+        // 更新用户信息
+        SysUser user = new SysUser();
+        user.setId(userId);
+        
+        if (StrUtil.isNotBlank(profileDTO.getNickname())) {
+            user.setNickname(profileDTO.getNickname().trim());
+        }
+        
+        if (StrUtil.isNotBlank(profileDTO.getEmail())) {
+            user.setEmail(profileDTO.getEmail().trim());
+        }
+        
+        if (StrUtil.isNotBlank(profileDTO.getPhone())) {
+            user.setPhone(profileDTO.getPhone().trim());
+        }
+        
+        user.setUpdateTime(LocalDateTime.now());
+        user.setUpdateBy(String.valueOf(userId));
+
+        boolean updated = updateById(user);
+        if (!updated) {
+            throw new RuntimeException("更新个人信息失败");
+        }
+
+        log.info("用户 {} 更新个人信息成功", userId);
+        
+        return getUserById(userId);
+    }
+
+    @Override
+    public boolean changePassword(Long userId, ChangePasswordDTO passwordDTO) {
+        return changePassword(userId, passwordDTO.getOldPassword(), passwordDTO.getNewPassword());
     }
 }

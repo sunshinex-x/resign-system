@@ -99,6 +99,25 @@ const routes = [
         name: 'Config',
         component: () => import('@/views/system/config.vue'),
         meta: { title: '系统配置', icon: 'Tools' }
+      },
+      {
+        path: 'minio',
+        name: 'MinioManage',
+        component: () => import('@/views/system/minio.vue'),
+        meta: { title: 'MinIO管理', icon: 'FolderOpened' }
+      }
+    ]
+  },
+  {
+    path: '/profile',
+    component: Layout,
+    meta: { hidden: true },
+    children: [
+      {
+        path: '',
+        name: 'Profile',
+        component: () => import('@/views/profile/index.vue'),
+        meta: { title: '个人中心', hidden: true }
       }
     ]
   },
@@ -124,8 +143,30 @@ router.beforeEach((to, _from, next) => {
   // 设置页面标题
   document.title = to.meta.title ? `${to.meta.title} - 应用重签名管理系统` : '应用重签名管理系统'
 
-  // 这里可以添加登录验证等逻辑
-  next()
+  // 获取token
+  const token = localStorage.getItem('token')
+
+  // 白名单路由（不需要登录）
+  const whiteList = ['/login', '/404']
+
+  if (token) {
+    // 已登录
+    if (to.path === '/login') {
+      // 如果已登录，访问登录页则重定向到首页
+      next({ path: '/' })
+    } else {
+      next()
+    }
+  } else {
+    // 未登录
+    if (whiteList.includes(to.path)) {
+      // 在白名单中，直接进入
+      next()
+    } else {
+      // 不在白名单中，重定向到登录页
+      next('/login')
+    }
+  }
 })
 
 export default router

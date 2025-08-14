@@ -1,5 +1,37 @@
 <template>
   <div class="app-container">
+    <!-- 搜索区域 -->
+    <el-card class="search-card">
+      <el-form :model="searchForm" label-width="80px" class="search-form">
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <el-form-item label="角色名称">
+              <el-input v-model="searchForm.roleName" placeholder="请输入角色名称" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="角色编码">
+              <el-input v-model="searchForm.roleCode" placeholder="请输入角色编码" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="状态">
+              <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 100%">
+                <el-option label="启用" value="1" />
+                <el-option label="禁用" value="0" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label=" " class="search-buttons">
+              <el-button type="primary" @click="handleSearch" icon="Search">搜索</el-button>
+              <el-button @click="resetSearch" icon="Refresh">重置</el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </el-card>
+
     <!-- 操作按钮 -->
     <div class="table-operations">
       <el-button type="primary" @click="handleAdd">新增角色</el-button>
@@ -7,67 +39,66 @@
     </div>
     
     <!-- 角色表格 -->
-    <el-table
-      v-loading="loading"
-      :data="roleList"
-      border
-      stripe
-      style="width: 100%"
-    >
-      <el-table-column prop="id" label="角色ID" width="80" />
-      <el-table-column prop="roleName" label="角色名称" width="150" />
-      <el-table-column prop="roleCode" label="角色编码" width="150" />
-      <el-table-column prop="description" label="角色描述" show-overflow-tooltip />
-      <el-table-column prop="status" label="状态" width="80">
-        <template #default="{row}">
-          <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-            {{ row.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="160">
-        <template #default="{row}">
-          {{ formatDateTime(row.createTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="250" fixed="right">
-        <template #default="{row}">
-          <el-button
-            type="primary"
-            size="small"
-            link
-            @click="handleEdit(row)"
-          >
-            编辑
-          </el-button>
-          <el-button
-            type="info"
-            size="small"
-            link
-            @click="handlePermission(row)"
-          >
-            权限配置
-          </el-button>
-          <el-button
-            :type="row.status === 1 ? 'warning' : 'success'"
-            size="small"
-            link
-            @click="handleToggleStatus(row)"
-          >
-            {{ row.status === 1 ? '禁用' : '启用' }}
-          </el-button>
-          <el-button
-            type="danger"
-            size="small"
-            link
-            @click="handleDelete(row)"
-            :disabled="row.id === 1"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-card class="table-card">
+      <el-table
+        v-loading="loading"
+        :data="roleList"
+        stripe
+        class="role-table"
+      >
+        <el-table-column prop="id" label="角色ID" width="80" />
+        <el-table-column prop="roleName" label="角色名称" min-width="150" />
+        <el-table-column prop="roleCode" label="角色编码" min-width="150" />
+        <el-table-column prop="description" label="角色描述" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="status" label="状态" width="80">
+          <template #default="{row}">
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="160">
+          <template #default="{row}">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="280" fixed="right">
+          <template #default="{row}">
+            <div class="table-actions">
+              <el-button
+                type="primary"
+                size="small"
+                @click="handleEdit(row)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                type="info"
+                size="small"
+                @click="handlePermission(row)"
+              >
+                权限配置
+              </el-button>
+              <el-button
+                :type="row.status === 1 ? 'warning' : 'success'"
+                size="small"
+                @click="handleToggleStatus(row)"
+              >
+                {{ row.status === 1 ? '禁用' : '启用' }}
+              </el-button>
+              <el-button
+                type="danger"
+                size="small"
+                @click="handleDelete(row)"
+                :disabled="row.id === 1"
+              >
+                删除
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
     
     <!-- 角色编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
@@ -121,6 +152,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDateTime } from '@/utils/validate'
+
+// 搜索表单
+const searchForm = reactive({
+  roleName: '',
+  roleCode: '',
+  status: ''
+})
 
 // 数据
 const roleList = ref([])
@@ -232,6 +270,19 @@ const permissionTree = [
     ]
   }
 ]
+
+// 搜索
+const handleSearch = () => {
+  fetchRoleList()
+}
+
+// 重置搜索
+const resetSearch = () => {
+  Object.keys(searchForm).forEach(key => {
+    searchForm[key] = ''
+  })
+  fetchRoleList()
+}
 
 // 获取角色列表
 const fetchRoleList = () => {
@@ -383,7 +434,55 @@ onMounted(() => {
   padding: 20px;
 }
 
+.search-card {
+  margin-bottom: 20px;
+  
+  .search-form {
+    .el-form-item {
+      margin-bottom: 0;
+    }
+    
+    .search-buttons {
+      .el-form-item__content {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        
+        .el-button {
+          margin-left: 12px;
+          
+          &:first-child {
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
 .table-operations {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  
+  .el-button {
+    margin-right: 12px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.table-card {
+  .role-table {
+    width: 100%;
+    
+    .el-table__header {
+      th {
+        background: #fafbfc !important;
+        color: #374151;
+        font-weight: 600;
+      }
+    }
+  }
 }
 </style>

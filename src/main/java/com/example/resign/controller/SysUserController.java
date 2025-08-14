@@ -3,12 +3,15 @@ package com.example.resign.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.resign.model.common.Result;
+import com.example.resign.model.dto.ChangePasswordDTO;
 import com.example.resign.model.dto.SysUserDTO;
+import com.example.resign.model.dto.UserProfileDTO;
 import com.example.resign.model.vo.SysUserVO;
 import com.example.resign.service.SysUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -101,6 +104,74 @@ public class SysUserController {
     public Result<Boolean> resetPassword(@PathVariable Long userId, @RequestBody Map<String, String> params) {
         String password = params.get("password");
         boolean result = sysUserService.resetPassword(userId, password);
+        return Result.success(result);
+    }
+    
+    /**
+     * 获取当前用户信息
+     */
+    @GetMapping("/profile")
+    public Result<SysUserVO> getCurrentUserProfile() {
+        // TODO: 从JWT token中获取当前用户ID
+        Long userId = 1L;
+        SysUserVO user = sysUserService.getCurrentUserProfile(userId);
+        return Result.success(user);
+    }
+    
+    /**
+     * 更新个人信息
+     */
+    @PutMapping("/profile")
+    public Result<SysUserVO> updateProfile(@Valid @RequestBody UserProfileDTO profileDTO) {
+        // TODO: 从JWT token中获取当前用户ID
+        Long userId = 1L;
+        SysUserVO user = sysUserService.updateProfile(userId, profileDTO);
+        return Result.success(user);
+    }
+    
+    /**
+     * 更新个人信息（兼容旧版本）
+     */
+    @PutMapping("/profile/legacy")
+    public Result<SysUserVO> updateProfileLegacy(@RequestBody Map<String, String> params) {
+        // TODO: 从JWT token中获取当前用户ID
+        Long userId = 1L;
+        SysUserVO user = sysUserService.updateProfile(userId, params);
+        return Result.success(user);
+    }
+    
+    /**
+     * 修改个人密码
+     */
+    @PutMapping("/password")
+    public Result<Boolean> changePassword(@Valid @RequestBody ChangePasswordDTO passwordDTO) {
+        // TODO: 从JWT token中获取当前用户ID
+        Long userId = 1L;
+        
+        // 检查新旧密码是否相同
+        if (passwordDTO.getOldPassword().equals(passwordDTO.getNewPassword())) {
+            return Result.error("新密码不能与原密码相同");
+        }
+        
+        boolean result = sysUserService.changePassword(userId, passwordDTO);
+        return Result.success(result);
+    }
+    
+    /**
+     * 上传头像
+     */
+    @PostMapping("/avatar")
+    public Result<Map<String, String>> uploadAvatar(@RequestParam("avatar") MultipartFile avatar) {
+        // TODO: 从JWT token中获取当前用户ID
+        Long userId = 1L;
+        
+        // 参数验证
+        if (avatar == null || avatar.isEmpty()) {
+            return Result.error("请选择要上传的头像文件");
+        }
+        
+        String avatarUrl = sysUserService.uploadAvatar(userId, avatar);
+        Map<String, String> result = Map.of("avatarUrl", avatarUrl);
         return Result.success(result);
     }
 }

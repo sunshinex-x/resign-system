@@ -46,6 +46,16 @@ public class ResignTask {
     private String certificatePassword;
 
     /**
+     * Provisioning Profile文件URL（iOS和HarmonyOS需要）
+     */
+    private String provisioningProfileUrl;
+
+    /**
+     * 任务描述
+     */
+    private String description;
+
+    /**
      * 重签名后的安装包URL
      */
     private String resignedPackageUrl;

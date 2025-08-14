@@ -35,6 +35,11 @@ public class MinioConfig {
     private String bucketName;
 
     /**
+     * URL访问方式：proxy(代理访问), direct(直接访问), presigned(预签名URL)
+     */
+    private String urlMode = "proxy";
+
+    /**
      * 创建MinIO客户端
      *
      * @return MinioClient

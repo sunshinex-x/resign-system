@@ -109,13 +109,36 @@ public class FileServiceImpl implements FileService {
     @Override
     public String getFileUrl(String objectName) {
         try {
-            // 获取文件的预签名URL，有效期7天
-            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-                    .bucket(minioConfig.getBucketName())
-                    .object(objectName)
-                    .method(Method.GET)
-                    .expiry(7 * 24 * 60 * 60)
-                    .build());
+            String urlMode = minioConfig.getUrlMode();
+            String fileUrl;
+            
+            switch (urlMode) {
+                case "direct":
+                    // 直接访问MinIO URL（需要MinIO配置公共访问权限）
+                    fileUrl = minioConfig.getEndpoint() + "/" + minioConfig.getBucketName() + "/" + objectName;
+                    log.debug("生成直接访问URL: {}", fileUrl);
+                    break;
+                    
+                case "presigned":
+                    // 预签名URL（适用于需要临时访问权限的场景）
+                    fileUrl = minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                            .bucket(minioConfig.getBucketName())
+                            .object(objectName)
+                            .method(Method.GET)
+                            .expiry(7 * 24 * 60 * 60)
+                            .build());
+                    log.debug("生成预签名URL: {}", fileUrl);
+                    break;
+                    
+                case "proxy":
+                default:
+                    // 使用后端代理访问（推荐，解决CORS问题）
+                    fileUrl = "/api/files/" + objectName;
+                    log.debug("生成代理访问URL: {}", fileUrl);
+                    break;
+            }
+            
+            return fileUrl;
         } catch (Exception e) {
             log.error("获取文件URL失败: {}", objectName, e);
             throw new RuntimeException("获取文件URL失败: " + e.getMessage());
@@ -129,15 +152,26 @@ public class FileServiceImpl implements FileService {
             return null;
         }
 
-        // 如果是MinIO的URL，直接从路径中提取对象名称
-        if (fileUrl.contains(minioConfig.getEndpoint())) {
-            String[] parts = fileUrl.split("/");
-            // 最后一个部分是对象名称
-            return parts[parts.length - 1];
+        try {
+            // 如果是MinIO的预签名URL，需要解析出对象名称
+            if (fileUrl.contains(minioConfig.getEndpoint())) {
+                // MinIO预签名URL格式: http://localhost:9000/bucket-name/object-name?X-Amz-Algorithm=...
+                String urlWithoutParams = fileUrl.split("\\?")[0]; // 移除查询参数
+                String bucketPrefix = "/" + minioConfig.getBucketName() + "/";
+                
+                int bucketIndex = urlWithoutParams.indexOf(bucketPrefix);
+                if (bucketIndex != -1) {
+                    // 提取bucket名称后的完整对象路径
+                    return urlWithoutParams.substring(bucketIndex + bucketPrefix.length());
+                }
+            }
+            
+            // 如果无法解析，返回null
+            log.warn("无法从URL中提取对象名称: {}", fileUrl);
+            return null;
+        } catch (Exception e) {
+            log.error("解析对象名称失败: {}", fileUrl, e);
+            return null;
         }
-
-        // 如果是外部URL，生成一个唯一的对象名称
-        String extension = StrUtil.subAfter(fileUrl, ".", true);
-        return IdUtil.fastSimpleUUID() + "." + extension;
     }
 }

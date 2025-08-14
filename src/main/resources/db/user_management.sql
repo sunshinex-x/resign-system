@@ -16,7 +16,7 @@ CREATE TABLE `sys_user` (
   `email` varchar(100) NOT NULL COMMENT '邮箱',
   `phone` varchar(20) DEFAULT NULL COMMENT '手机号',
   `password` varchar(255) NOT NULL COMMENT '密码',
-  `avatar` varchar(255) DEFAULT NULL COMMENT '头像',
+  `avatar` varchar(1000) DEFAULT NULL COMMENT '头像URL',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：1-启用，0-禁用',
   `last_login_time` datetime DEFAULT NULL COMMENT '最后登录时间',
   `last_login_ip` varchar(50) DEFAULT NULL COMMENT '最后登录IP',

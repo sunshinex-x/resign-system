@@ -35,4 +35,22 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
      * @return 用户详情
      */
     SysUserVO selectUserById(@Param("userId") Long userId);
+    
+    /**
+     * 根据邮箱查询用户（排除指定用户ID）
+     *
+     * @param email  邮箱
+     * @param userId 排除的用户ID
+     * @return 用户数量
+     */
+    int countByEmailExcludeUserId(@Param("email") String email, @Param("userId") Long userId);
+    
+    /**
+     * 根据手机号查询用户（排除指定用户ID）
+     *
+     * @param phone  手机号
+     * @param userId 排除的用户ID
+     * @return 用户数量
+     */
+    int countByPhoneExcludeUserId(@Param("phone") String phone, @Param("userId") Long userId);
 }

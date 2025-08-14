@@ -6,11 +6,14 @@ import com.example.resign.entity.ResignTask;
 import com.example.resign.model.common.Result;
 import com.example.resign.model.dto.ResignTaskDTO;
 import com.example.resign.model.dto.ResignTaskQueryDTO;
+import com.example.resign.model.dto.ResignTaskCreateDTO;
 import com.example.resign.model.vo.ResignTaskVO;
+import com.example.resign.model.vo.PackageInfoVO;
 import com.example.resign.service.ResignTaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 
@@ -113,5 +116,44 @@ public class ResignTaskController {
     public Result<Boolean> batchDeleteTasks(@RequestBody List<String> taskIds) {
         boolean result = resignTaskService.batchDeleteTasks(taskIds);
         return Result.success(result);
+    }
+    
+    /**
+     * 解析包信息
+     */
+    @PostMapping("/parse-package")
+    public Result<PackageInfoVO> parsePackage(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("appType") String appType) {
+        PackageInfoVO packageInfo = resignTaskService.parsePackage(file, appType);
+        return Result.success(packageInfo);
+    }
+    
+    /**
+     * 创建重签名任务（文件上传）
+     */
+    @PostMapping("/create")
+    public Result<ResignTaskVO> createTaskWithFiles(
+            @RequestParam("appType") String appType,
+            @RequestParam("originalPackageFile") MultipartFile originalPackageFile,
+            @RequestParam("certificateFile") MultipartFile certificateFile,
+            @RequestParam("certificatePassword") String certificatePassword,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "callbackUrl", required = false) String callbackUrl,
+            @RequestParam(value = "profileFiles", required = false) List<MultipartFile> profileFiles,
+            @RequestParam(value = "bundleIds", required = false) List<String> bundleIds) {
+        
+        ResignTaskCreateDTO createDTO = new ResignTaskCreateDTO();
+        createDTO.setAppType(appType);
+        createDTO.setOriginalPackageFile(originalPackageFile);
+        createDTO.setCertificateFile(certificateFile);
+        createDTO.setCertificatePassword(certificatePassword);
+        createDTO.setDescription(description);
+        createDTO.setCallbackUrl(callbackUrl);
+        createDTO.setProfileFiles(profileFiles);
+        createDTO.setBundleIds(bundleIds);
+        
+        ResignTaskVO task = resignTaskService.createTaskWithFiles(createDTO);
+        return Result.success(task);
     }
 }

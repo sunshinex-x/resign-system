@@ -3,9 +3,12 @@ package com.example.resign.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.resign.entity.ResignTask;
+import com.example.resign.model.dto.ResignTaskCreateDTO;
 import com.example.resign.model.dto.ResignTaskDTO;
 import com.example.resign.model.dto.ResignTaskQueryDTO;
+import com.example.resign.model.vo.PackageInfoVO;
 import com.example.resign.model.vo.ResignTaskVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -89,5 +92,22 @@ public interface ResignTaskService {
      * @return 是否删除成功
      */
     boolean batchDeleteTasks(List<String> taskIds);
+
+    /**
+     * 解析包信息
+     *
+     * @param file    安装包文件
+     * @param appType 应用类型
+     * @return 包信息
+     */
+    PackageInfoVO parsePackage(MultipartFile file, String appType);
+
+    /**
+     * 创建重签名任务（文件上传）
+     *
+     * @param createDTO 创建任务DTO
+     * @return 任务视图对象
+     */
+    ResignTaskVO createTaskWithFiles(ResignTaskCreateDTO createDTO);
 
 }

@@ -11,9 +11,12 @@ import com.example.resign.entity.ResignTask;
 import com.example.resign.enums.AppType;
 import com.example.resign.enums.TaskStatus;
 import com.example.resign.mapper.ResignTaskMapper;
+import com.example.resign.model.dto.ResignTaskCreateDTO;
 import com.example.resign.model.dto.ResignTaskDTO;
 import com.example.resign.model.dto.ResignTaskQueryDTO;
+import com.example.resign.model.vo.PackageInfoVO;
 import com.example.resign.model.vo.ResignTaskVO;
+import org.springframework.web.multipart.MultipartFile;
 import com.example.resign.service.FileService;
 import com.example.resign.service.ResignService;
 import com.example.resign.service.ResignTaskService;
@@ -399,5 +402,125 @@ public class ResignTaskServiceImpl extends ServiceImpl<ResignTaskMapper, ResignT
         }
     }
 
-    // 已在123行定义了相同的convertToVO方法，此处删除重复定义
+    @Override
+    public PackageInfoVO parsePackage(MultipartFile file, String appType) {
+        try {
+            PackageInfoVO packageInfo = new PackageInfoVO();
+            
+            // 基本文件信息
+            packageInfo.setFileSize(file.getSize());
+            
+            // 根据应用类型解析包信息
+            AppType type = AppType.fromString(appType);
+            switch (type) {
+                case IOS:
+                    return parseIosPackage(file, packageInfo);
+                case ANDROID:
+                    return parseAndroidPackage(file, packageInfo);
+                case HARMONY:
+                    return parseHarmonyPackage(file, packageInfo);
+                default:
+                    throw new RuntimeException("不支持的应用类型: " + appType);
+            }
+        } catch (Exception e) {
+            log.error("解析包信息失败", e);
+            throw new RuntimeException("解析包信息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ResignTaskVO createTaskWithFiles(ResignTaskCreateDTO createDTO) {
+        try {
+            // 上传原始安装包
+            String originalPackageUrl = uploadFile(createDTO.getOriginalPackageFile(), "packages");
+            
+            // 上传证书文件
+            String certificateUrl = uploadFile(createDTO.getCertificateFile(), "certificates");
+            
+            // 创建任务DTO
+            ResignTaskDTO taskDTO = new ResignTaskDTO();
+            taskDTO.setAppType(createDTO.getAppType());
+            taskDTO.setOriginalPackageUrl(originalPackageUrl);
+            taskDTO.setCertificateUrl(certificateUrl);
+            taskDTO.setCertificatePassword(createDTO.getCertificatePassword());
+            taskDTO.setCallbackUrl(createDTO.getCallbackUrl());
+            
+            // 创建任务
+            return createTask(taskDTO);
+        } catch (Exception e) {
+            log.error("创建重签名任务失败", e);
+            throw new RuntimeException("创建重签名任务失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 解析iOS包信息
+     */
+    private PackageInfoVO parseIosPackage(MultipartFile file, PackageInfoVO packageInfo) {
+        // 这里应该实现IPA文件的解析逻辑
+        // 由于需要复杂的解析库，这里提供一个简化的实现
+        packageInfo.setAppName("iOS应用");
+        packageInfo.setPackageName("com.example.ios");
+        packageInfo.setVersionName("1.0.0");
+        packageInfo.setVersionCode("1");
+        packageInfo.setMinSdkVersion("iOS 12.0");
+        packageInfo.setTargetSdkVersion("iOS 16.0");
+        packageInfo.setSignature("iOS签名信息");
+        packageInfo.setPermissions(new String[]{"相机", "相册", "位置"});
+        
+        return packageInfo;
+    }
+
+    /**
+     * 解析Android包信息
+     */
+    private PackageInfoVO parseAndroidPackage(MultipartFile file, PackageInfoVO packageInfo) {
+        // 这里应该实现APK文件的解析逻辑
+        // 由于需要复杂的解析库，这里提供一个简化的实现
+        packageInfo.setAppName("Android应用");
+        packageInfo.setPackageName("com.example.android");
+        packageInfo.setVersionName("1.0.0");
+        packageInfo.setVersionCode("1");
+        packageInfo.setMinSdkVersion("21");
+        packageInfo.setTargetSdkVersion("33");
+        packageInfo.setSignature("Android签名信息");
+        packageInfo.setPermissions(new String[]{"CAMERA", "READ_EXTERNAL_STORAGE", "ACCESS_FINE_LOCATION"});
+        
+        return packageInfo;
+    }
+
+    /**
+     * 解析鸿蒙包信息
+     */
+    private PackageInfoVO parseHarmonyPackage(MultipartFile file, PackageInfoVO packageInfo) {
+        // 这里应该实现HAP文件的解析逻辑
+        // 由于需要复杂的解析库，这里提供一个简化的实现
+        packageInfo.setAppName("鸿蒙应用");
+        packageInfo.setPackageName("com.example.harmony");
+        packageInfo.setVersionName("1.0.0");
+        packageInfo.setVersionCode("1");
+        packageInfo.setMinSdkVersion("API 8");
+        packageInfo.setTargetSdkVersion("API 10");
+        packageInfo.setSignature("鸿蒙签名信息");
+        packageInfo.setPermissions(new String[]{"ohos.permission.CAMERA", "ohos.permission.READ_MEDIA"});
+        
+        return packageInfo;
+    }
+
+    /**
+     * 上传文件到MinIO
+     */
+    private String uploadFile(MultipartFile file, String folder) {
+        try {
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null ? 
+                originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
+            String objectName = folder + "/" + IdUtil.fastSimpleUUID() + extension;
+            
+            return fileService.uploadFile(file.getInputStream(), objectName, file.getContentType());
+        } catch (Exception e) {
+            throw new RuntimeException("文件上传失败: " + e.getMessage());
+        }
+    }
 }

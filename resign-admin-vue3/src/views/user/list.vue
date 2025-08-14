@@ -1,35 +1,31 @@
 <template>
   <div class="app-container">
     <!-- 搜索区域 -->
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>搜索条件</span>
-          <div>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button @click="resetSearch">重置</el-button>
-          </div>
-        </div>
-      </template>
-
-      <el-form :model="searchForm" label-width="100px" class="compact-form">
+    <el-card class="search-card">
+      <el-form :model="searchForm" label-width="80px" class="search-form">
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="用户名">
               <el-input v-model="searchForm.username" placeholder="请输入用户名" clearable />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="邮箱">
               <el-input v-model="searchForm.email" placeholder="请输入邮箱" clearable />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="状态">
               <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 100%">
                 <el-option label="启用" value="1" />
                 <el-option label="禁用" value="0" />
               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label=" " class="search-buttons">
+              <el-button type="primary" @click="handleSearch" icon="Search">搜索</el-button>
+              <el-button @click="resetSearch" icon="Refresh">重置</el-button>
             </el-form-item>
           </el-col>
         </el-row>
@@ -44,14 +40,15 @@
     </div>
 
     <!-- 用户表格 -->
-    <el-table v-loading="loading" :data="userList" border stripe style="width: 100%"
-      @selection-change="handleSelectionChange">
+    <el-card class="table-card">
+      <el-table v-loading="loading" :data="userList" stripe class="user-table"
+        @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column prop="id" label="用户ID" width="80" />
-      <el-table-column prop="username" label="用户名" width="120" />
-      <el-table-column prop="nickname" label="昵称" width="120" />
-      <el-table-column prop="email" label="邮箱" width="200" />
-      <el-table-column prop="phone" label="手机号" width="120" />
+      <el-table-column prop="username" label="用户名" min-width="120" />
+      <el-table-column prop="nickname" label="昵称" min-width="120" />
+      <el-table-column prop="email" label="邮箱" min-width="200" />
+      <el-table-column prop="phone" label="手机号" min-width="120" />
       <el-table-column prop="roleName" label="角色" width="100">
         <template #default="{ row }">
           <el-tag :type="row.roleName === '管理员' ? 'danger' : 'primary'">
@@ -76,28 +73,31 @@
           {{ row.lastLoginTime ? formatDateTime(row.lastLoginTime) : '从未登录' }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
-          <el-button type="primary" size="small" link @click="handleEdit(row)">
-            编辑
-          </el-button>
-          <el-button :type="row.status === 1 ? 'warning' : 'success'" size="small" link
-            @click="handleToggleStatus(row)">
-            {{ row.status === 1 ? '禁用' : '启用' }}
-          </el-button>
-          <el-button type="danger" size="small" link @click="handleDelete(row)">
-            删除
-          </el-button>
+          <div class="table-actions">
+            <el-button type="primary" size="small" @click="handleEdit(row)">
+              编辑
+            </el-button>
+            <el-button :type="row.status === 1 ? 'warning' : 'success'" size="small"
+              @click="handleToggleStatus(row)">
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">
+              删除
+            </el-button>
+          </div>
         </template>
       </el-table-column>
-    </el-table>
+      </el-table>
 
-    <!-- 分页 -->
-    <div class="pagination-container">
-      <el-pagination v-model:current-page="pagination.current" v-model:page-size="pagination.size"
-        :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total"
-        @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-    </div>
+      <!-- 分页 -->
+      <div class="pagination-container">
+        <el-pagination v-model:current-page="pagination.current" v-model:page-size="pagination.size"
+          :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+      </div>
+    </el-card>
 
     <!-- 用户编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
@@ -444,9 +444,63 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
-.compact-form {
-  .el-form-item {
-    margin-bottom: 15px;
+.search-card {
+  margin-bottom: 20px;
+  
+  .search-form {
+    .el-form-item {
+      margin-bottom: 0;
+    }
+    
+    .search-buttons {
+      .el-form-item__content {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        
+        .el-button {
+          margin-left: 12px;
+          
+          &:first-child {
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+.table-operations {
+  margin-bottom: 20px;
+  
+  .el-button {
+    margin-right: 12px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.table-card {
+  .user-table {
+    width: 100%;
+    
+    .el-table__header {
+      th {
+        background: #fafbfc !important;
+        color: #374151;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .pagination-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
   }
 }
 </style>

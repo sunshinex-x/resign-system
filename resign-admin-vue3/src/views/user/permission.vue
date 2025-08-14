@@ -1,5 +1,38 @@
 <template>
   <div class="app-container">
+    <!-- 搜索区域 -->
+    <el-card class="search-card">
+      <el-form :model="searchForm" label-width="80px" class="search-form">
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <el-form-item label="权限名称">
+              <el-input v-model="searchForm.name" placeholder="请输入权限名称" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="权限编码">
+              <el-input v-model="searchForm.code" placeholder="请输入权限编码" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="权限类型">
+              <el-select v-model="searchForm.type" placeholder="请选择权限类型" clearable style="width: 100%">
+                <el-option label="菜单" value="menu" />
+                <el-option label="按钮" value="button" />
+                <el-option label="接口" value="api" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label=" " class="search-buttons">
+              <el-button type="primary" @click="handleSearch" icon="Search">搜索</el-button>
+              <el-button @click="resetSearch" icon="Refresh">重置</el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </el-card>
+
     <!-- 操作按钮 -->
     <div class="table-operations">
       <el-button type="primary" @click="handleAdd">新增权限</el-button>
@@ -9,85 +42,84 @@
     </div>
     
     <!-- 权限表格 -->
-    <el-table
-      ref="permissionTableRef"
-      v-loading="loading"
-      :data="permissionList"
-      border
-      stripe
-      style="width: 100%"
-      row-key="id"
-      :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-      :default-expand-all="false"
-    >
-      <el-table-column prop="name" label="权限名称" width="200" />
-      <el-table-column prop="code" label="权限编码" width="200" />
-      <el-table-column prop="type" label="权限类型" width="100">
-        <template #default="{row}">
-          <el-tag :type="row.type === 'menu' ? 'primary' : (row.type === 'button' ? 'success' : 'info')">
-            {{ row.type === 'menu' ? '菜单' : (row.type === 'button' ? '按钮' : '接口') }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="path" label="路径/接口" show-overflow-tooltip />
-      <el-table-column prop="icon" label="图标" width="80">
-        <template #default="{row}">
-          <el-icon v-if="row.icon">
-            <component :is="row.icon" />
-          </el-icon>
-        </template>
-      </el-table-column>
-      <el-table-column prop="sort" label="排序" width="80" />
-      <el-table-column prop="status" label="状态" width="80">
-        <template #default="{row}">
-          <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-            {{ row.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="160">
-        <template #default="{row}">
-          {{ formatDateTime(row.createTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
-        <template #default="{row}">
-          <el-button
-            type="primary"
-            size="small"
-            link
-            @click="handleEdit(row)"
-          >
-            编辑
-          </el-button>
-          <el-button
-            type="success"
-            size="small"
-            link
-            @click="handleAddChild(row)"
-            v-if="row.type === 'menu'"
-          >
-            添加子权限
-          </el-button>
-          <el-button
-            :type="row.status === 1 ? 'warning' : 'success'"
-            size="small"
-            link
-            @click="handleToggleStatus(row)"
-          >
-            {{ row.status === 1 ? '禁用' : '启用' }}
-          </el-button>
-          <el-button
-            type="danger"
-            size="small"
-            link
-            @click="handleDelete(row)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-card class="table-card">
+      <el-table
+        ref="permissionTableRef"
+        v-loading="loading"
+        :data="permissionList"
+        stripe
+        class="permission-table"
+        row-key="id"
+        :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+        :default-expand-all="false"
+      >
+        <el-table-column prop="name" label="权限名称" min-width="200" />
+        <el-table-column prop="code" label="权限编码" min-width="200" />
+        <el-table-column prop="type" label="权限类型" width="100">
+          <template #default="{row}">
+            <el-tag :type="row.type === 'menu' ? 'primary' : (row.type === 'button' ? 'success' : 'info')">
+              {{ row.type === 'menu' ? '菜单' : (row.type === 'button' ? '按钮' : '接口') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="path" label="路径/接口" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="icon" label="图标" width="80">
+          <template #default="{row}">
+            <el-icon v-if="row.icon">
+              <component :is="row.icon" />
+            </el-icon>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序" width="80" />
+        <el-table-column prop="status" label="状态" width="80">
+          <template #default="{row}">
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="160">
+          <template #default="{row}">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="220" fixed="right">
+          <template #default="{row}">
+            <div class="table-actions">
+              <el-button
+                type="primary"
+                size="small"
+                @click="handleEdit(row)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                type="success"
+                size="small"
+                @click="handleAddChild(row)"
+                v-if="row.type === 'menu'"
+              >
+                添加子权限
+              </el-button>
+              <el-button
+                :type="row.status === 1 ? 'warning' : 'success'"
+                size="small"
+                @click="handleToggleStatus(row)"
+              >
+                {{ row.status === 1 ? '禁用' : '启用' }}
+              </el-button>
+              <el-button
+                type="danger"
+                size="small"
+                @click="handleDelete(row)"
+              >
+                删除
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
     
     <!-- 权限编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
@@ -149,6 +181,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDateTime } from '@/utils/validate'
+
+// 搜索表单
+const searchForm = reactive({
+  name: '',
+  code: '',
+  type: ''
+})
 
 // 数据
 const permissionList = ref([])
@@ -329,6 +368,19 @@ const mockPermissions = [
     ]
   }
 ]
+
+// 搜索
+const handleSearch = () => {
+  fetchPermissionList()
+}
+
+// 重置搜索
+const resetSearch = () => {
+  Object.keys(searchForm).forEach(key => {
+    searchForm[key] = ''
+  })
+  fetchPermissionList()
+}
 
 // 获取权限列表
 const fetchPermissionList = () => {
@@ -540,7 +592,55 @@ onMounted(() => {
   padding: 20px;
 }
 
+.search-card {
+  margin-bottom: 20px;
+  
+  .search-form {
+    .el-form-item {
+      margin-bottom: 0;
+    }
+    
+    .search-buttons {
+      .el-form-item__content {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        
+        .el-button {
+          margin-left: 12px;
+          
+          &:first-child {
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
 .table-operations {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  
+  .el-button {
+    margin-right: 12px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.table-card {
+  .permission-table {
+    width: 100%;
+    
+    .el-table__header {
+      th {
+        background: #fafbfc !important;
+        color: #374151;
+        font-weight: 600;
+      }
+    }
+  }
 }
 </style>

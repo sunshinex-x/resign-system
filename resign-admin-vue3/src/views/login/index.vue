@@ -43,8 +43,10 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/store/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loginFormRef = ref(null)
 const loading = ref(false)
 
@@ -65,23 +67,24 @@ const loginRules = {
 }
 
 // 登录处理
-const handleLogin = () => {
+const handleLogin = async () => {
   if (!loginFormRef.value) return
   
-  loginFormRef.value.validate((valid) => {
+  loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       
-      // 模拟登录请求
-      setTimeout(() => {
+      try {
+        const result = await authStore.login(loginForm)
+        if (result.success) {
+          ElMessage.success('登录成功')
+          router.push('/')
+        }
+      } catch (error) {
+        console.error('登录失败:', error)
+      } finally {
         loading.value = false
-        
-        // 这里应该调用实际的登录API
-        // 暂时使用模拟数据，直接登录成功
-        localStorage.setItem('token', 'admin-token')
-        ElMessage.success('登录成功')
-        router.push('/')
-      }, 1000)
+      }
     } else {
       return false
     }
@@ -95,26 +98,102 @@ const handleLogin = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+  }
 }
 
 .login-card {
-  width: 400px;
-  border-radius: 8px;
+  width: 420px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 1;
+  
+  :deep(.el-card__body) {
+    padding: 40px;
+  }
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
   
   h2 {
-    font-size: 24px;
-    color: #303133;
+    font-size: 28px;
+    color: #1a202c;
     margin: 0;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
 .login-form {
-  padding: 0 20px;
+  :deep(.el-form-item) {
+    margin-bottom: 24px;
+  }
+  
+  :deep(.el-input) {
+    height: 48px;
+    
+    .el-input__wrapper {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s;
+      
+      &:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+      }
+      
+      &.is-focus {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+      }
+    }
+    
+    .el-input__inner {
+      height: 46px;
+      line-height: 46px;
+      font-size: 16px;
+    }
+  }
+  
+  :deep(.el-button) {
+    height: 48px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
 }
 </style>

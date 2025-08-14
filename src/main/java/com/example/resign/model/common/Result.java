@@ -75,4 +75,31 @@ public class Result<T> {
     public static <T> Result<T> error(String message) {
         return error(500, message);
     }
+
+    /**
+     * 设置数据
+     *
+     * @param data 数据
+     * @return 当前结果对象
+     */
+    public Result<T> setData(T data) {
+        this.data = data;
+        return this;
+    }
+
+    /**
+     * 失败并设置数据
+     *
+     * @param message 消息
+     * @param data    数据
+     * @param <T>     数据类型
+     * @return 失败结果
+     */
+    public static <T> Result<T> errorWithData(String message, T data) {
+        Result<T> result = new Result<>();
+        result.setCode(500);
+        result.setMessage(message);
+        result.setData(data);
+        return result;
+    }
 }

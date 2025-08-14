@@ -55,6 +55,7 @@ minio:
   accessKey: minioadmin
   secretKey: minioadmin
   bucketName: resign-apps
+  urlMode: proxy  # 文件访问方式: proxy(代理访问), direct(直接访问), presigned(预签名URL)
 
 # 重签名配置
 resign:
