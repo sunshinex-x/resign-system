@@ -56,5 +56,5 @@ public class PackageInfoVO {
     /**
      * 权限列表
      */
-    private String[] permissions;
+    private java.util.List<String> permissions;
 }

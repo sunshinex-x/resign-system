@@ -9,8 +9,7 @@ import lombok.Getter;
 public enum AppType {
     
     IOS("IOS", ".ipa"),
-    ANDROID("ANDROID", ".apk"),
-    HARMONY("HARMONY", ".hap");
+    ANDROID("ANDROID", ".apk");
     
     private final String type;
     private final String extension;
@@ -39,8 +38,6 @@ public enum AppType {
             return IOS;
         } else if (lowerFileName.endsWith(".apk")) {
             return ANDROID;
-        } else if (lowerFileName.endsWith(".hap")) {
-            return HARMONY;
         }
         
         return null;

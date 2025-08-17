@@ -10,7 +10,7 @@ import lombok.Data;
 public class ResignTaskDTO {
 
     /**
-     * 应用类型：IOS、ANDROID、HARMONY
+     * 应用类型：IOS、ANDROID
      */
     @NotBlank(message = "应用类型不能为空")
     private String appType;

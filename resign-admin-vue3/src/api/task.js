@@ -59,3 +59,27 @@ export function deleteTaskBatch(taskIds) {
     data: taskIds
   })
 }
+
+// 创建任务V2（支持多Bundle ID和Profile文件映射）
+export function createTaskV2(formData) {
+  return request({
+    url: '/api/resign/create-v2',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 为任务添加Bundle ID和Profile文件映射
+export function addBundleProfile(taskId, formData) {
+  return request({
+    url: `/api/resign/tasks/${taskId}/add-bundle-profile`,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}

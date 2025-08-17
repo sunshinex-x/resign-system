@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: resign-system
+  servlet:
+    multipart:
+      max-file-size: 500MB      # 单个文件最大大小（支持大型安装包）
+      max-request-size: 500MB   # 整个请求最大大小
+      enabled: true
   
   # 数据库配置
   datasource:
@@ -57,6 +62,13 @@ minio:
   bucketName: resign-apps
   urlMode: proxy  # 文件访问方式: proxy(代理访问), direct(直接访问), presigned(预签名URL)
 
+# 自定义文件上传配置
+file:
+  upload:
+    avatar-max-size: 2097152      # 头像最大大小 2MB
+    file-max-size: 10485760       # 普通文件最大大小 10MB  
+    package-max-size: 524288000   # 安装包最大大小 500MB
+
 # 重签名配置
 resign:
   # 临时文件存储路径
@@ -69,8 +81,7 @@ resign:
     android:
       sign-tool: /usr/local/bin/apksigner
       zipalign-tool: /usr/local/bin/zipalign
-    harmony:
-      sign-tool: /usr/local/bin/hapsigntool
+# harmony 配置已移除，专注于 iOS 和 Android
   # 任务配置
   task:
     retry-count: 3

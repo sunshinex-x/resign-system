@@ -72,8 +72,8 @@ const isShowAsMenuItem = computed(() => {
     return true
   }
   
-  // 如果只有一个可见子菜单，显示为菜单项
-  if (visibleChildren.value.length === 1) {
+  // 如果只有一个可见子菜单且没有设置alwaysShow，显示为菜单项
+  if (visibleChildren.value.length === 1 && (!props.item.meta || !props.item.meta.alwaysShow)) {
     return true
   }
   

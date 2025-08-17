@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.resign.entity.ResignTask;
 import com.example.resign.model.common.Result;
+import com.example.resign.model.dto.PackageParseResultDTO;
 import com.example.resign.model.dto.ResignTaskDTO;
 import com.example.resign.model.dto.ResignTaskQueryDTO;
 import com.example.resign.model.dto.ResignTaskCreateDTO;
@@ -119,14 +120,21 @@ public class ResignTaskController {
     }
     
     /**
-     * 解析包信息
+     * 解析包信息（自动检测应用类型）
      */
     @PostMapping("/parse-package")
-    public Result<PackageInfoVO> parsePackage(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("appType") String appType) {
-        PackageInfoVO packageInfo = resignTaskService.parsePackage(file, appType);
+    public Result<PackageInfoVO> parsePackage(@RequestParam("file") MultipartFile file) {
+        PackageInfoVO packageInfo = resignTaskService.parsePackage(file);
         return Result.success(packageInfo);
+    }
+    
+    /**
+     * 解析包信息V2（返回详细的Bundle ID信息）
+     */
+    @PostMapping("/parse-package-v2")
+    public Result<PackageParseResultDTO> parsePackageV2(@RequestParam("file") MultipartFile file) {
+        com.example.resign.model.dto.PackageParseResultDTO result = resignTaskService.parsePackageV2(file);
+        return Result.success(result);
     }
     
     /**
@@ -155,5 +163,34 @@ public class ResignTaskController {
         
         ResignTaskVO task = resignTaskService.createTaskWithFiles(createDTO);
         return Result.success(task);
+    }
+    
+    /**
+     * 创建重签名任务V2（支持多Bundle ID和Profile文件映射）
+     */
+    @PostMapping("/create-v2")
+    public Result<ResignTaskVO> createTaskV2(
+            @RequestParam("originalPackageFile") MultipartFile originalPackageFile,
+            @RequestParam("certificateFile") MultipartFile certificateFile,
+            @RequestParam("certificatePassword") String certificatePassword,
+            @RequestParam(value = "callbackUrl", required = false) String callbackUrl,
+            @RequestParam(value = "description", required = false) String description) {
+        
+        ResignTaskVO task = resignTaskService.createTaskV2(
+            originalPackageFile, certificateFile, certificatePassword, callbackUrl, description);
+        return Result.success(task);
+    }
+    
+    /**
+     * 为任务添加Bundle ID和Profile文件映射
+     */
+    @PostMapping("/tasks/{taskId}/add-bundle-profile")
+    public Result<Boolean> addBundleProfile(
+            @PathVariable String taskId,
+            @RequestParam("bundleId") String bundleId,
+            @RequestParam("profileFile") MultipartFile profileFile) {
+        
+        boolean result = resignTaskService.addBundleProfile(taskId, bundleId, profileFile);
+        return Result.success(result);
     }
 }

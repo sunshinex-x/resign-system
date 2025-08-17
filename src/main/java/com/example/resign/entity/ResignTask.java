@@ -26,7 +26,7 @@ public class ResignTask {
     private String taskId;
 
     /**
-     * 应用类型：IOS、ANDROID、HARMONY
+     * 应用类型：IOS、ANDROID
      */
     private String appType;
 
@@ -46,9 +46,19 @@ public class ResignTask {
     private String certificatePassword;
 
     /**
-     * Provisioning Profile文件URL（iOS和HarmonyOS需要）
+     * Provisioning Profile URL（兼容现有数据库字段）
      */
     private String provisioningProfileUrl;
+    
+    /**
+     * Bundle ID（兼容现有数据库字段）
+     */
+    private String bundleId;
+    
+    /**
+     * 嵌套应用包名映射（兼容现有数据库字段）
+     */
+    private String nestedAppProfiles;
 
     /**
      * 任务描述
@@ -89,4 +99,32 @@ public class ResignTask {
      * 更新时间
      */
     private LocalDateTime updateTime;
+    
+    // 注意：以下字段在当前数据库表中不存在，需要数据库升级后才能使用
+    // 暂时注释掉，避免SQL错误
+    
+    // /**
+    //  * 应用权限信息（JSON格式）
+    //  */
+    // private String permissions;
+    
+    // /**
+    //  * 签名类型：DEVELOPMENT, DISTRIBUTION, ADHOC
+    //  */
+    // private String signType;
+    
+    // /**
+    //  * 处理耗时（毫秒）
+    //  */
+    // private Long processingTime;
+    
+    // /**
+    //  * 原始文件大小（字节）
+    //  */
+    // private Long originalFileSize;
+    
+    // /**
+    //  * 重签名后文件大小（字节）
+    //  */
+    // private Long resignedFileSize;
 }

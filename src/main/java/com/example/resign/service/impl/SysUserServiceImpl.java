@@ -13,6 +13,7 @@ import com.example.resign.mapper.SysUserMapper;
 import com.example.resign.mapper.SysUserRoleMapper;
 import com.example.resign.model.dto.ChangePasswordDTO;
 import com.example.resign.model.dto.SysUserDTO;
+import com.example.resign.config.FileUploadConfig;
 import com.example.resign.model.dto.UserProfileDTO;
 import com.example.resign.model.vo.SysUserVO;
 import com.example.resign.service.FileService;
@@ -38,6 +39,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private final SysUserMapper sysUserMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
     private final FileService fileService;
+    private final FileUploadConfig fileUploadConfig;
 
     @Override
     public IPage<SysUserVO> pageUsers(Page<SysUserVO> page, String username, String email, Integer status) {
@@ -300,15 +302,22 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
     public String uploadAvatar(Long userId, MultipartFile avatar) {
         try {
-            // 验证文件类型
-            String contentType = avatar.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                throw new RuntimeException("请上传图片文件");
+            // 验证文件不能为空
+            if (avatar.isEmpty()) {
+                throw new RuntimeException("请选择要上传的图片文件");
             }
 
-            // 验证文件大小（2MB）
-            if (avatar.getSize() > 2 * 1024 * 1024) {
-                throw new RuntimeException("图片大小不能超过2MB");
+            // 验证文件类型
+            String contentType = avatar.getContentType();
+            if (!fileUploadConfig.isAllowedImageType(contentType)) {
+                throw new RuntimeException("不支持的图片格式，请上传 JPG、PNG、GIF 或 WebP 格式的图片");
+            }
+
+            // 验证文件大小
+            if (avatar.getSize() > fileUploadConfig.getAvatarMaxSize()) {
+                throw new RuntimeException("图片大小不能超过 " + 
+                    fileUploadConfig.getFormattedSize(fileUploadConfig.getAvatarMaxSize()) + 
+                    "，当前文件大小: " + fileUploadConfig.getFormattedSize(avatar.getSize()));
             }
 
             // 生成文件名

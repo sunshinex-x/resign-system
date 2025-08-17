@@ -16,7 +16,7 @@ public class ResignTaskVO {
     private String taskId;
 
     /**
-     * 应用类型：IOS、ANDROID、HARMONY
+     * 应用类型：IOS、ANDROID
      */
     private String appType;
 

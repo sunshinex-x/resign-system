@@ -83,6 +83,26 @@ const routes = [
     ]
   },
   {
+    path: '/certificate',
+    component: Layout,
+    redirect: '/certificate/cert',
+    meta: { title: '证书管理', icon: 'Key', alwaysShow: true },
+    children: [
+      {
+        path: 'cert',
+        name: 'CertManage',
+        component: () => import('@/views/certificate/cert.vue'),
+        meta: { title: '证书管理', icon: 'Lock' }
+      },
+      {
+        path: 'profile',
+        name: 'ProfileManage',
+        component: () => import('@/views/certificate/profile.vue'),
+        meta: { title: '描述文件管理', icon: 'Document' }
+      }
+    ]
+  },
+  {
     path: '/system',
     component: Layout,
     redirect: '/system/log',

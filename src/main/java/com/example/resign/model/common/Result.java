@@ -3,103 +3,48 @@ package com.example.resign.model.common;
 import lombok.Data;
 
 /**
- * 通用响应结果
- *
- * @param <T> 数据类型
+ * 统一响应结果
  */
 @Data
 public class Result<T> {
-
-    /**
-     * 状态码
-     */
+    
     private Integer code;
-
-    /**
-     * 消息
-     */
     private String message;
-
-    /**
-     * 数据
-     */
     private T data;
-
-    /**
-     * 成功
-     *
-     * @param <T> 数据类型
-     * @return 成功结果
-     */
-    public static <T> Result<T> success() {
-        return success(null);
-    }
-
-    /**
-     * 成功
-     *
-     * @param data 数据
-     * @param <T>  数据类型
-     * @return 成功结果
-     */
-    public static <T> Result<T> success(T data) {
-        Result<T> result = new Result<>();
-        result.setCode(200);
-        result.setMessage("操作成功");
-        result.setData(data);
-        return result;
-    }
-
-    /**
-     * 失败
-     *
-     * @param code    状态码
-     * @param message 消息
-     * @param <T>     数据类型
-     * @return 失败结果
-     */
-    public static <T> Result<T> error(Integer code, String message) {
-        Result<T> result = new Result<>();
-        result.setCode(code);
-        result.setMessage(message);
-        return result;
-    }
-
-    /**
-     * 失败
-     *
-     * @param message 消息
-     * @param <T>     数据类型
-     * @return 失败结果
-     */
-    public static <T> Result<T> error(String message) {
-        return error(500, message);
-    }
-
-    /**
-     * 设置数据
-     *
-     * @param data 数据
-     * @return 当前结果对象
-     */
-    public Result<T> setData(T data) {
+    
+    public Result() {}
+    
+    public Result(Integer code, String message, T data) {
+        this.code = code;
+        this.message = message;
         this.data = data;
-        return this;
     }
-
-    /**
-     * 失败并设置数据
-     *
-     * @param message 消息
-     * @param data    数据
-     * @param <T>     数据类型
-     * @return 失败结果
-     */
+    
+    public static <T> Result<T> success() {
+        return new Result<>(200, "操作成功", null);
+    }
+    
+    public static <T> Result<T> success(T data) {
+        return new Result<>(200, "操作成功", data);
+    }
+    
+    public static <T> Result<T> success(String message, T data) {
+        return new Result<>(200, message, data);
+    }
+    
+    public static <T> Result<T> error(String message) {
+        return new Result<>(500, message, null);
+    }
+    
+    public static <T> Result<T> error(Integer code, String message) {
+        return new Result<>(code, message, null);
+    }
+    
     public static <T> Result<T> errorWithData(String message, T data) {
-        Result<T> result = new Result<>();
-        result.setCode(500);
-        result.setMessage(message);
-        result.setData(data);
-        return result;
+        return new Result<>(500, message, data);
+    }
+    
+    public static <T> Result<T> errorWithData(Integer code, String message, T data) {
+        return new Result<>(code, message, data);
     }
 }

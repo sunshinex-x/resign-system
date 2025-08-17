@@ -94,13 +94,12 @@ public interface ResignTaskService {
     boolean batchDeleteTasks(List<String> taskIds);
 
     /**
-     * 解析包信息
+     * 解析包信息（自动检测应用类型）
      *
-     * @param file    安装包文件
-     * @param appType 应用类型
+     * @param file 安装包文件
      * @return 包信息
      */
-    PackageInfoVO parsePackage(MultipartFile file, String appType);
+    PackageInfoVO parsePackage(MultipartFile file);
 
     /**
      * 创建重签名任务（文件上传）
@@ -109,5 +108,36 @@ public interface ResignTaskService {
      * @return 任务视图对象
      */
     ResignTaskVO createTaskWithFiles(ResignTaskCreateDTO createDTO);
+    
+    /**
+     * 解析包信息V2（返回详细的Bundle ID信息）
+     *
+     * @param file 安装包文件
+     * @return 包解析结果
+     */
+    com.example.resign.model.dto.PackageParseResultDTO parsePackageV2(MultipartFile file);
+    
+    /**
+     * 创建重签名任务V2（支持多Bundle ID和Profile文件映射）
+     *
+     * @param originalPackageFile 原始包文件
+     * @param certificateFile 证书文件
+     * @param certificatePassword 证书密码
+     * @param callbackUrl 回调地址
+     * @param description 任务描述
+     * @return 任务视图对象
+     */
+    ResignTaskVO createTaskV2(MultipartFile originalPackageFile, MultipartFile certificateFile, 
+                             String certificatePassword, String callbackUrl, String description);
+    
+    /**
+     * 为任务添加Bundle ID和Profile文件映射
+     *
+     * @param taskId 任务ID
+     * @param bundleId Bundle ID
+     * @param profileFile Profile文件
+     * @return 是否添加成功
+     */
+    boolean addBundleProfile(String taskId, String bundleId, MultipartFile profileFile);
 
 }
