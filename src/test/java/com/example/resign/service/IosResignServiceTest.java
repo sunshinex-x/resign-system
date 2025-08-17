@@ -20,7 +20,7 @@ public class IosResignServiceTest {
 
     @Test
     public void testIsSupportedFile() {
-        IosResignService service = new IosResignService(null);
+        IosResignService service = new IosResignService(null, null);
         
         // 测试IPA文件支持
         MockMultipartFile ipaFile = new MockMultipartFile(

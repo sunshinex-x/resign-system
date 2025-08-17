@@ -2,7 +2,54 @@
 
 ## 项目介绍
 
-本项目是一个移动端安装包重签名服务，支持iOS、Android和鸿蒙三种系统的安装包重签名。服务采用异步处理方式，通过RabbitMQ进行任务调度，重签名后的安装包存储在MinIO对象存储中。
+本项目是一个移动端安装包重签名服务，支持iOS和Android两种系统的安装包重签名。服务采用异步处理方式，通过RabbitMQ进行任务调度，重签名后的安装包存储在MinIO对象存储中。
+
+## 🚀 最新更新 - 项目架构重构 (v2.1)
+
+### 🏗️ 架构简化
+- **去除策略模式**：简化代码结构，提高可维护性
+- **平台服务独立**：iOS、Android、鸿蒙各自独立的服务类
+- **直接依赖注入**：不再使用工厂模式，直接注入平台服务
+- **代码量减少**：删除抽象接口和工厂类，降低复杂度
+
+### ✨ iOS签名系统特性
+- **智能Profile匹配**：自动匹配主应用和插件的Profile文件
+- **权限分析**：自动提取和分析应用权限信息  
+- **复杂签名支持**：正确处理Frameworks、Plugins、Main App的签名顺序
+- **通配符Profile**：支持通配符Profile文件匹配多个Bundle ID
+- **签名验证**：自动验证签名有效性
+
+### 🔧 技术改进
+- **多Profile支持**：一个任务可以上传多个Profile文件
+- **Bundle ID智能提取**：自动从IPA中提取所有Bundle ID
+- **错误处理增强**：详细的错误诊断和重试机制
+- **性能优化**：异步处理和资源管理优化
+
+### 📋 使用示例
+
+#### iOS签名
+```bash
+curl -X POST "http://localhost:8080/api/resign/create" \
+  -F "appType=IOS" \
+  -F "originalPackageFile=@/path/to/app.ipa" \
+  -F "certificateFile=@/path/to/cert.p12" \
+  -F "certificatePassword=your_password" \
+  -F "profileFiles=@/path/to/main_app.mobileprovision" \
+  -F "profileFiles=@/path/to/plugin1.mobileprovision" \
+  -F "bundleIds=com.example.mainapp" \
+  -F "bundleIds=com.example.mainapp.plugin1"
+```
+
+#### Android签名
+```bash
+curl -X POST "http://localhost:8080/api/resign/create" \
+  -F "appType=ANDROID" \
+  -F "originalPackageFile=@/path/to/app.apk" \
+  -F "certificateFile=@/path/to/keystore.jks" \
+  -F "certificatePassword=your_password"
+```
+
+
 
 ## 技术栈
 
@@ -152,7 +199,7 @@ GET /api/resign/tasks?current=1&size=10&appType=IOS&status=SUCCESS
 | --- | --- | --- | --- |
 | current | int | 否 | 当前页码，默认1 |
 | size | int | 否 | 每页大小，默认10 |
-| appType | string | 否 | 应用类型：IOS、ANDROID、HARMONY |
+| appType | string | 否 | 应用类型：IOS、ANDROID |
 | status | string | 否 | 任务状态：PENDING、PROCESSING、SUCCESS、FAILED |
 
 响应结果：
