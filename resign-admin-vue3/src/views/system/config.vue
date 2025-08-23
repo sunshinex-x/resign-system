@@ -109,14 +109,16 @@
       </template>
       
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="系统版本">{{ systemInfo.version }}</el-descriptions-item>
+        <el-descriptions-item label="应用版本">{{ systemInfo.version }}</el-descriptions-item>
         <el-descriptions-item label="Java版本">{{ systemInfo.javaVersion }}</el-descriptions-item>
-        <el-descriptions-item label="启动时间">{{ formatDateTime(systemInfo.startTime) }}</el-descriptions-item>
+        <el-descriptions-item label="启动时间">{{ systemInfo.startTime }}</el-descriptions-item>
+        <el-descriptions-item label="当前时间">{{ systemInfo.currentTime }}</el-descriptions-item>
         <el-descriptions-item label="运行时长">{{ systemInfo.uptime }}</el-descriptions-item>
-        <el-descriptions-item label="内存使用">{{ systemInfo.memoryUsage }}</el-descriptions-item>
-        <el-descriptions-item label="CPU使用率">{{ systemInfo.cpuUsage }}</el-descriptions-item>
-        <el-descriptions-item label="磁盘使用">{{ systemInfo.diskUsage }}</el-descriptions-item>
-        <el-descriptions-item label="活跃线程数">{{ systemInfo.activeThreads }}</el-descriptions-item>
+        <el-descriptions-item label="内存使用率">{{ systemInfo.memoryUsage }}</el-descriptions-item>
+        <el-descriptions-item label="操作系统">{{ systemInfo.osName }} {{ systemInfo.osVersion }}</el-descriptions-item>
+        <el-descriptions-item label="处理器核心数">{{ systemInfo.processors }}</el-descriptions-item>
+        <el-descriptions-item label="JVM名称">{{ systemInfo.vmName }}</el-descriptions-item>
+        <el-descriptions-item label="JVM版本">{{ systemInfo.vmVersion }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
   </div>
@@ -126,106 +128,214 @@
 import { reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { formatDateTime } from '@/utils/validate'
+import {
+  getResignConfig,
+  saveResignConfig as saveResignConfigApi,
+  getMinioConfig,
+  saveMinioConfig as saveMinioConfigApi,
+  testMinioConnection as testMinioConnectionApi,
+  getRabbitConfig,
+  saveRabbitConfig as saveRabbitConfigApi,
+  testRabbitConnection as testRabbitConnectionApi,
+  getSystemInfo
+} from '@/api/config'
 
 // 重签名配置
 const resignConfig = reactive({
-  tempDir: '/tmp/resign',
+  tempDir: '',
   retryCount: 3,
   timeoutSeconds: 1800,
-  iosSignTool: '/usr/bin/codesign',
-  androidSignTool: '/usr/local/bin/apksigner',
-  harmonySignTool: '/usr/local/bin/hapsigntool'
+  iosSignTool: '',
+  androidSignTool: '',
+  harmonySignTool: ''
 })
 
 // MinIO配置
 const minioConfig = reactive({
-  endpoint: 'http://localhost:9000',
-  accessKey: 'minioadmin',
-  secretKey: 'minioadmin',
-  bucketName: 'resign-apps'
+  endpoint: '',
+  accessKey: '',
+  secretKey: '',
+  bucketName: ''
 })
 
 // RabbitMQ配置
 const rabbitConfig = reactive({
-  host: 'localhost',
+  host: '',
   port: 5672,
-  username: 'guest',
-  password: 'guest',
+  username: '',
+  password: '',
   virtualHost: '/'
 })
 
 // 系统信息
 const systemInfo = reactive({
-  version: '1.0.0',
-  javaVersion: 'Java 17.0.15',
-  startTime: new Date(Date.now() - 3600000),
-  uptime: '1小时23分钟',
-  memoryUsage: '512MB / 2GB (25%)',
-  cpuUsage: '15%',
-  diskUsage: '45GB / 100GB (45%)',
-  activeThreads: 25
+  version: '',
+  javaVersion: '',
+  startTime: null,
+  uptime: '',
+  memoryUsage: '',
+  cpuUsage: '',
+  diskUsage: '',
+  activeThreads: 0,
+  vmName: '',
+  vmVersion: '',
+  osName: '',
+  osVersion: '',
+  processors: 0,
+  currentTime: ''
 })
 
 // 刷新重签名配置
-const refreshResignConfig = () => {
-  // 模拟刷新配置
-  ElMessage.success('重签名配置刷新成功')
+const refreshResignConfig = async () => {
+  try {
+    const response = await getResignConfig()
+    const data = response.data
+    
+    // 处理后端返回的嵌套数据结构
+    resignConfig.tempDir = data.tempDir || ''
+    resignConfig.retryCount = data.task?.retryCount || 3
+    resignConfig.timeoutSeconds = data.task?.timeoutSeconds || 1800
+    resignConfig.iosSignTool = data.tools?.ios?.signTool || ''
+    resignConfig.androidSignTool = data.tools?.android?.signTool || ''
+    resignConfig.harmonySignTool = data.tools?.harmony?.signTool || ''
+    
+    ElMessage.success('重签名配置刷新成功')
+  } catch (error) {
+    console.error('获取重签名配置失败:', error)
+    ElMessage.error('获取重签名配置失败')
+  }
 }
 
 // 保存重签名配置
-const saveResignConfig = () => {
-  // 模拟保存配置
-  ElMessage.success('重签名配置保存成功')
+const saveResignConfig = async () => {
+  try {
+    await saveResignConfigApi(resignConfig)
+    ElMessage.success('重签名配置保存成功')
+  } catch (error) {
+    console.error('保存重签名配置失败:', error)
+    ElMessage.error('保存重签名配置失败')
+  }
 }
 
 // 刷新MinIO配置
-const refreshMinioConfig = () => {
-  // 模拟刷新配置
-  ElMessage.success('MinIO配置刷新成功')
+const refreshMinioConfig = async () => {
+  try {
+    const response = await getMinioConfig()
+    const data = response.data
+    
+    // 处理后端返回的数据结构
+    minioConfig.endpoint = data.endpoint || ''
+    minioConfig.accessKey = data.accessKey || ''
+    minioConfig.secretKey = data.secretKey || '' // 出于安全考虑，后端可能不返回密钥
+    minioConfig.bucketName = data.bucketName || ''
+    
+    ElMessage.success('MinIO配置刷新成功')
+  } catch (error) {
+    console.error('获取MinIO配置失败:', error)
+    ElMessage.error('获取MinIO配置失败')
+  }
 }
 
 // 保存MinIO配置
-const saveMinioConfig = () => {
-  // 模拟保存配置
-  ElMessage.success('MinIO配置保存成功')
+const saveMinioConfig = async () => {
+  try {
+    await saveMinioConfigApi(minioConfig)
+    ElMessage.success('MinIO配置保存成功')
+  } catch (error) {
+    console.error('保存MinIO配置失败:', error)
+    ElMessage.error('保存MinIO配置失败')
+  }
 }
 
 // 刷新RabbitMQ配置
-const refreshRabbitConfig = () => {
-  // 模拟刷新配置
-  ElMessage.success('RabbitMQ配置刷新成功')
+const refreshRabbitConfig = async () => {
+  try {
+    const response = await getRabbitConfig()
+    const data = response.data
+    
+    // 处理后端返回的数据结构
+    rabbitConfig.host = data.host || ''
+    rabbitConfig.port = data.port || 5672
+    rabbitConfig.username = data.username || ''
+    rabbitConfig.password = data.password || '' // 出于安全考虑，后端可能不返回密码
+    rabbitConfig.virtualHost = data.virtualHost || '/'
+    
+    ElMessage.success('RabbitMQ配置刷新成功')
+  } catch (error) {
+    console.error('获取RabbitMQ配置失败:', error)
+    ElMessage.error('获取RabbitMQ配置失败')
+  }
 }
 
 // 保存RabbitMQ配置
-const saveRabbitConfig = () => {
-  // 模拟保存配置
-  ElMessage.success('RabbitMQ配置保存成功')
+const saveRabbitConfig = async () => {
+  try {
+    await saveRabbitConfigApi(rabbitConfig)
+    ElMessage.success('RabbitMQ配置保存成功')
+  } catch (error) {
+    console.error('保存RabbitMQ配置失败:', error)
+    ElMessage.error('保存RabbitMQ配置失败')
+  }
 }
 
 // 测试MinIO连接
-const testMinioConnection = () => {
-  // 模拟测试连接
-  ElMessage.success('MinIO连接测试成功')
+const testMinioConnection = async () => {
+  try {
+    await testMinioConnectionApi(minioConfig)
+    ElMessage.success('MinIO连接测试成功')
+  } catch (error) {
+    console.error('MinIO连接测试失败:', error)
+    ElMessage.error('MinIO连接测试失败')
+  }
 }
 
 // 测试RabbitMQ连接
-const testRabbitConnection = () => {
-  // 模拟测试连接
-  ElMessage.success('RabbitMQ连接测试成功')
+const testRabbitConnection = async () => {
+  try {
+    await testRabbitConnectionApi(rabbitConfig)
+    ElMessage.success('RabbitMQ连接测试成功')
+  } catch (error) {
+    console.error('RabbitMQ连接测试失败:', error)
+    ElMessage.error('RabbitMQ连接测试失败')
+  }
 }
 
 // 刷新系统信息
-const refreshSystemInfo = () => {
-  // 模拟刷新系统信息
-  systemInfo.uptime = '1小时25分钟'
-  systemInfo.memoryUsage = '520MB / 2GB (26%)'
-  systemInfo.cpuUsage = '12%'
-  ElMessage.success('系统信息已刷新')
+const refreshSystemInfo = async () => {
+  try {
+    const response = await getSystemInfo()
+    const data = response.data
+    
+    // 处理后端返回的嵌套数据结构
+    systemInfo.version = data.application?.version || ''
+    systemInfo.javaVersion = data.java?.version || ''
+    systemInfo.startTime = data.application?.startTime || null
+    systemInfo.uptime = data.runtime?.uptime || ''
+    systemInfo.memoryUsage = data.memory?.heapUsedPercent || ''
+    systemInfo.cpuUsage = 'N/A' // 后端暂未提供CPU使用率
+    systemInfo.diskUsage = 'N/A' // 后端暂未提供磁盘使用率
+    systemInfo.activeThreads = 0 // 后端暂未提供活跃线程数
+    systemInfo.vmName = data.runtime?.vmName || ''
+    systemInfo.vmVersion = data.runtime?.vmVersion || ''
+    systemInfo.osName = data.os?.name || ''
+    systemInfo.osVersion = data.os?.version || ''
+    systemInfo.processors = data.runtime?.processors || 0
+    systemInfo.currentTime = data.application?.currentTime || ''
+    
+    ElMessage.success('系统信息已刷新')
+  } catch (error) {
+    console.error('获取系统信息失败:', error)
+    ElMessage.error('获取系统信息失败')
+  }
 }
 
 // 初始化
 onMounted(() => {
-  // 加载配置
+  // 加载所有配置
+  refreshResignConfig()
+  refreshMinioConfig()
+  refreshRabbitConfig()
+  refreshSystemInfo()
 })
 </script>
 

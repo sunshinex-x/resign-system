@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.resign.mapper.IosCertificateMapper">
+
+    <!-- 根据状态查询证书列表 -->
+    <select id="selectByStatus" resultType="com.example.resign.entity.IosCertificate">
+        SELECT * FROM ios_certificate WHERE status = #{status} ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据团队ID查询证书列表 -->
+    <select id="selectByTeamId" resultType="com.example.resign.entity.IosCertificate">
+        SELECT * FROM ios_certificate WHERE team_id = #{teamId} ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据证书类型查询证书列表 -->
+    <select id="selectByCertificateType" resultType="com.example.resign.entity.IosCertificate">
+        SELECT * FROM ios_certificate WHERE certificate_type = #{certificateType} ORDER BY create_time DESC
+    </select>
+
+</mapper>

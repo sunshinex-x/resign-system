@@ -180,6 +180,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getPermissionList, createPermission, updatePermission, deletePermission } from '@/api/user'
 import { formatDateTime } from '@/utils/validate'
 
 // 搜索表单
@@ -229,145 +230,7 @@ const rules = {
   ]
 }
 
-// 模拟权限数据
-const mockPermissions = [
-  {
-    id: 1,
-    parentId: null,
-    name: '控制台',
-    code: 'DASHBOARD',
-    type: 'menu',
-    path: '/dashboard',
-    icon: 'Odometer',
-    sort: 1,
-    status: 1,
-    description: '系统控制台',
-    createTime: new Date('2023-01-01'),
-    children: [
-      {
-        id: 11,
-        parentId: 1,
-        name: '查看控制台',
-        code: 'DASHBOARD:VIEW',
-        type: 'button',
-        path: '',
-        icon: '',
-        sort: 1,
-        status: 1,
-        description: '查看控制台权限',
-        createTime: new Date('2023-01-01')
-      }
-    ]
-  },
-  {
-    id: 2,
-    parentId: null,
-    name: '任务管理',
-    code: 'TASK',
-    type: 'menu',
-    path: '/task',
-    icon: 'Document',
-    sort: 2,
-    status: 1,
-    description: '任务管理模块',
-    createTime: new Date('2023-01-01'),
-    children: [
-      {
-        id: 21,
-        parentId: 2,
-        name: '任务列表',
-        code: 'TASK:LIST',
-        type: 'menu',
-        path: '/task/list',
-        icon: 'List',
-        sort: 1,
-        status: 1,
-        description: '任务列表页面',
-        createTime: new Date('2023-01-01')
-      },
-      {
-        id: 22,
-        parentId: 2,
-        name: '创建任务',
-        code: 'TASK:CREATE',
-        type: 'button',
-        path: '',
-        icon: '',
-        sort: 2,
-        status: 1,
-        description: '创建任务权限',
-        createTime: new Date('2023-01-01')
-      },
-      {
-        id: 23,
-        parentId: 2,
-        name: '编辑任务',
-        code: 'TASK:EDIT',
-        type: 'button',
-        path: '',
-        icon: '',
-        sort: 3,
-        status: 1,
-        description: '编辑任务权限',
-        createTime: new Date('2023-01-01')
-      },
-      {
-        id: 24,
-        parentId: 2,
-        name: '删除任务',
-        code: 'TASK:DELETE',
-        type: 'button',
-        path: '',
-        icon: '',
-        sort: 4,
-        status: 1,
-        description: '删除任务权限',
-        createTime: new Date('2023-01-01')
-      }
-    ]
-  },
-  {
-    id: 3,
-    parentId: null,
-    name: '用户管理',
-    code: 'USER',
-    type: 'menu',
-    path: '/user',
-    icon: 'User',
-    sort: 3,
-    status: 1,
-    description: '用户管理模块',
-    createTime: new Date('2023-01-01'),
-    children: [
-      {
-        id: 31,
-        parentId: 3,
-        name: '用户列表',
-        code: 'USER:LIST',
-        type: 'menu',
-        path: '/user/list',
-        icon: 'UserFilled',
-        sort: 1,
-        status: 1,
-        description: '用户列表页面',
-        createTime: new Date('2023-01-01')
-      },
-      {
-        id: 32,
-        parentId: 3,
-        name: '角色管理',
-        code: 'USER:ROLE',
-        type: 'menu',
-        path: '/user/role',
-        icon: 'Avatar',
-        sort: 2,
-        status: 1,
-        description: '角色管理页面',
-        createTime: new Date('2023-01-01')
-      }
-    ]
-  }
-]
+
 
 // 搜索
 const handleSearch = () => {
@@ -383,14 +246,33 @@ const resetSearch = () => {
 }
 
 // 获取权限列表
-const fetchPermissionList = () => {
+const fetchPermissionList = async () => {
   loading.value = true
   
-  // 模拟API调用
-  setTimeout(() => {
-    permissionList.value = [...mockPermissions]
+  try {
+    const response = await getPermissionList()
+    console.log('权限API响应:', response)
+    
+    // 确保数据格式正确
+    let data = response.data
+    if (response.code === 200 && response.data) {
+      data = response.data.list || response.data
+    }
+    
+    // 验证数据是否为数组
+    if (Array.isArray(data)) {
+      permissionList.value = data
+    } else {
+      console.warn('权限API返回的数据不是数组格式:', data)
+      permissionList.value = []
+    }
+  } catch (error) {
+    console.error('获取权限列表失败:', error)
+    ElMessage.error('获取权限列表失败')
+    permissionList.value = []
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
 // 刷新列表
@@ -461,9 +343,16 @@ const handleToggleStatus = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    row.status = row.status === 1 ? 0 : 1
-    ElMessage.success(`${action}成功`)
+  }).then(async () => {
+    try {
+      const newStatus = row.status === 1 ? 0 : 1
+      await updatePermission(row.id, { ...row, status: newStatus })
+      row.status = newStatus
+      ElMessage.success(`${action}成功`)
+    } catch (error) {
+      console.error('更新权限状态失败:', error)
+      ElMessage.error(`${action}失败`)
+    }
   }).catch(() => {})
 }
 
@@ -473,25 +362,15 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    // 递归删除权限
-    const deletePermission = (list, id) => {
-      for (let i = 0; i < list.length; i++) {
-        if (list[i].id === id) {
-          list.splice(i, 1)
-          return true
-        }
-        if (list[i].children && list[i].children.length > 0) {
-          if (deletePermission(list[i].children, id)) {
-            return true
-          }
-        }
-      }
-      return false
+  }).then(async () => {
+    try {
+      await deletePermission(row.id)
+      ElMessage.success('删除成功')
+      fetchPermissionList() // 重新加载列表
+    } catch (error) {
+      console.error('删除权限失败:', error)
+      ElMessage.error('删除失败')
     }
-    
-    deletePermission(permissionList.value, row.id)
-    ElMessage.success('删除成功')
   }).catch(() => {})
 }
 
@@ -501,63 +380,22 @@ const handleSubmit = async () => {
   
   await permissionFormRef.value.validate(async (valid) => {
     if (valid) {
-      if (isEdit.value) {
-        // 编辑权限
-        const updatePermission = (list, form) => {
-          for (let item of list) {
-            if (item.id === form.id) {
-              Object.assign(item, form)
-              return true
-            }
-            if (item.children && item.children.length > 0) {
-              if (updatePermission(item.children, form)) {
-                return true
-              }
-            }
-          }
-          return false
-        }
-        
-        updatePermission(permissionList.value, permissionForm)
-        ElMessage.success('编辑成功')
-      } else {
-        // 新增权限
-        const newPermission = {
-          ...permissionForm,
-          id: Date.now(),
-          createTime: new Date(),
-          children: []
-        }
-        
-        if (permissionForm.parentId) {
-          // 添加到父权限的children中
-          const addToParent = (list, parentId, newItem) => {
-            for (let item of list) {
-              if (item.id === parentId) {
-                if (!item.children) {
-                  item.children = []
-                }
-                item.children.push(newItem)
-                return true
-              }
-              if (item.children && item.children.length > 0) {
-                if (addToParent(item.children, parentId, newItem)) {
-                  return true
-                }
-              }
-            }
-            return false
-          }
-          
-          addToParent(permissionList.value, permissionForm.parentId, newPermission)
+      try {
+        if (isEdit.value) {
+          // 编辑权限
+          await updatePermission(permissionForm.id, permissionForm)
+          ElMessage.success('编辑成功')
         } else {
-          // 添加为顶级权限
-          permissionList.value.push(newPermission)
+          // 新增权限
+          await createPermission(permissionForm)
+          ElMessage.success('新增成功')
         }
-        
-        ElMessage.success('新增成功')
+        dialogVisible.value = false
+        fetchPermissionList() // 重新加载列表
+      } catch (error) {
+        console.error('保存权限失败:', error)
+        ElMessage.error('保存失败')
       }
-      dialogVisible.value = false
     }
   })
 }

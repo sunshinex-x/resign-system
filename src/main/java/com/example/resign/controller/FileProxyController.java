@@ -1,6 +1,11 @@
 package com.example.resign.controller;
 
 import com.example.resign.service.FileService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +23,7 @@ import java.io.InputStream;
  * 文件代理控制器
  * 用于代理访问MinIO中的文件，解决CORS和权限问题
  */
+@Tag(name = "文件代理", description = "文件代理访问相关接口")
 @Slf4j
 @RestController
 @RequestMapping("/api/files")
@@ -29,16 +35,29 @@ public class FileProxyController {
     /**
      * 代理访问头像文件
      */
+    @Operation(summary = "获取头像文件", description = "代理访问用户头像文件")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "文件获取成功"),
+        @ApiResponse(responseCode = "404", description = "文件不存在")
+    })
     @GetMapping("/avatars/{fileName}")
-    public ResponseEntity<byte[]> getAvatar(@PathVariable String fileName) {
+    public ResponseEntity<byte[]> getAvatar(
+            @Parameter(description = "头像文件名", example = "avatar.jpg") @PathVariable String fileName) {
         return getFile("avatars/" + fileName);
     }
 
     /**
      * 代理访问任意文件
      */
+    @Operation(summary = "获取文件", description = "代理访问指定文件夹下的文件")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "文件获取成功"),
+        @ApiResponse(responseCode = "404", description = "文件不存在")
+    })
     @GetMapping("/{folder}/{fileName}")
-    public ResponseEntity<byte[]> getFile(@PathVariable String folder, @PathVariable String fileName) {
+    public ResponseEntity<byte[]> getFile(
+            @Parameter(description = "文件夹名称", example = "certificates") @PathVariable String folder,
+            @Parameter(description = "文件名", example = "cert.p12") @PathVariable String fileName) {
         return getFile(folder + "/" + fileName);
     }
 

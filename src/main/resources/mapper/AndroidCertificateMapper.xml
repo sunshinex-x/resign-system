@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.resign.mapper.AndroidCertificateMapper">
+
+    <!-- 根据状态查询证书列表 -->
+    <select id="selectByStatus" resultType="com.example.resign.entity.AndroidCertificate">
+        SELECT * FROM android_certificate WHERE status = #{status} ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据密钥别名查询证书 -->
+    <select id="selectByKeyAlias" resultType="com.example.resign.entity.AndroidCertificate">
+        SELECT * FROM android_certificate WHERE key_alias = #{keyAlias} ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询有效的证书列表（状态为ACTIVE且未过期） -->
+    <select id="selectActiveCertificates" resultType="com.example.resign.entity.AndroidCertificate">
+        SELECT * FROM android_certificate WHERE status = 'ACTIVE' AND (expire_date IS NULL OR expire_date > NOW()) ORDER BY create_time DESC
+    </select>
+
+</mapper>

@@ -152,6 +152,15 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDateTime } from '@/utils/validate'
+import { 
+  getRoleList, 
+  createRole, 
+  updateRole, 
+  deleteRole, 
+  getRolePermissions, 
+  setRolePermissions,
+  getPermissionTree 
+} from '@/api/user'
 
 // 搜索表单
 const searchForm = reactive({
@@ -202,74 +211,10 @@ const treeProps = {
   label: 'name'
 }
 
-// 模拟角色数据
-const mockRoles = [
-  {
-    id: 1,
-    roleName: '超级管理员',
-    roleCode: 'SUPER_ADMIN',
-    description: '系统超级管理员，拥有所有权限',
-    status: 1,
-    createTime: new Date('2023-01-01')
-  },
-  {
-    id: 2,
-    roleName: '普通用户',
-    roleCode: 'USER',
-    description: '普通用户，只能查看和操作自己的数据',
-    status: 1,
-    createTime: new Date('2023-02-01')
-  },
-  {
-    id: 3,
-    roleName: '审核员',
-    roleCode: 'AUDITOR',
-    description: '负责审核任务和数据',
-    status: 1,
-    createTime: new Date('2023-03-01')
-  }
-]
 
-// 模拟权限树数据
-const permissionTree = [
-  {
-    id: 1,
-    name: '控制台',
-    children: [
-      { id: 11, name: '查看控制台' }
-    ]
-  },
-  {
-    id: 2,
-    name: '任务管理',
-    children: [
-      { id: 21, name: '查看任务列表' },
-      { id: 22, name: '创建任务' },
-      { id: 23, name: '编辑任务' },
-      { id: 24, name: '删除任务' },
-      { id: 25, name: '重试任务' }
-    ]
-  },
-  {
-    id: 3,
-    name: '用户管理',
-    children: [
-      { id: 31, name: '查看用户列表' },
-      { id: 32, name: '创建用户' },
-      { id: 33, name: '编辑用户' },
-      { id: 34, name: '删除用户' },
-      { id: 35, name: '重置密码' }
-    ]
-  },
-  {
-    id: 4,
-    name: '系统管理',
-    children: [
-      { id: 41, name: '查看日志' },
-      { id: 42, name: '系统配置' }
-    ]
-  }
-]
+
+// 权限树数据
+const permissionTree = ref([])
 
 // 搜索
 const handleSearch = () => {
@@ -285,14 +230,37 @@ const resetSearch = () => {
 }
 
 // 获取角色列表
-const fetchRoleList = () => {
+const fetchRoleList = async () => {
   loading.value = true
-  
-  // 模拟API调用
-  setTimeout(() => {
-    roleList.value = [...mockRoles]
+  try {
+    const params = {
+      roleName: searchForm.roleName,
+      roleCode: searchForm.roleCode,
+      status: searchForm.status
+    }
+    const response = await getRoleList(params)
+    console.log('API响应:', response)
+    
+    // 确保数据是数组格式
+    let data = response.data
+    if (response.code === 200 && response.data) {
+      data = response.data.records || response.data
+    }
+    
+    // 验证数据是否为数组
+    if (Array.isArray(data)) {
+      roleList.value = data
+    } else {
+      console.warn('API返回的数据不是数组格式:', data)
+      roleList.value = []
+    }
+  } catch (error) {
+    console.error('获取角色列表失败:', error)
+    ElMessage.error('获取角色列表失败')
+    roleList.value = []
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
 // 刷新列表
@@ -317,20 +285,22 @@ const handleEdit = (row) => {
 }
 
 // 权限配置
-const handlePermission = (row) => {
+const handlePermission = async (row) => {
   currentRole.value = row
-  // 模拟获取角色已有权限
-  if (row.id === 1) {
-    // 超级管理员拥有所有权限
-    checkedPermissions.value = [11, 21, 22, 23, 24, 25, 31, 32, 33, 34, 35, 41, 42]
-  } else if (row.id === 2) {
-    // 普通用户只有查看权限
-    checkedPermissions.value = [11, 21]
-  } else {
-    // 审核员有部分权限
-    checkedPermissions.value = [11, 21, 22, 25, 41]
+  try {
+    // 获取权限树
+    const { data: treeData } = await getPermissionTree()
+    permissionTree.value = treeData || []
+    
+    // 获取角色已有权限
+    const { data: permissions } = await getRolePermissions(row.id)
+    checkedPermissions.value = permissions || []
+    
+    permissionDialogVisible.value = true
+  } catch (error) {
+    console.error('获取权限数据失败:', error)
+    ElMessage.error('获取权限数据失败')
   }
-  permissionDialogVisible.value = true
 }
 
 // 切换角色状态
@@ -340,15 +310,22 @@ const handleToggleStatus = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    row.status = row.status === 1 ? 0 : 1
-    ElMessage.success(`${action}成功`)
+  }).then(async () => {
+    try {
+      const newStatus = row.status === 1 ? 0 : 1
+      await updateRole(row.id, { ...row, status: newStatus })
+      row.status = newStatus
+      ElMessage.success(`${action}成功`)
+    } catch (error) {
+      console.error(`${action}角色失败:`, error)
+      ElMessage.error(`${action}失败`)
+    }
   }).catch(() => {})
 }
 
 // 删除角色
 const handleDelete = (row) => {
-  if (row.id === 1) {
+  if (row.roleCode === 'SUPER_ADMIN') {
     ElMessage.warning('超级管理员角色不能删除')
     return
   }
@@ -357,12 +334,15 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    const index = roleList.value.findIndex(role => role.id === row.id)
-    if (index > -1) {
-      roleList.value.splice(index, 1)
+  }).then(async () => {
+    try {
+      await deleteRole(row.id)
+      ElMessage.success('删除成功')
+      fetchRoleList() // 重新加载列表
+    } catch (error) {
+      console.error('删除角色失败:', error)
+      ElMessage.error('删除失败')
     }
-    ElMessage.success('删除成功')
   }).catch(() => {})
 }
 
@@ -372,24 +352,22 @@ const handleSubmit = async () => {
   
   await roleFormRef.value.validate(async (valid) => {
     if (valid) {
-      if (isEdit.value) {
-        // 编辑角色
-        const index = roleList.value.findIndex(role => role.id === roleForm.id)
-        if (index > -1) {
-          Object.assign(roleList.value[index], roleForm)
+      try {
+        if (isEdit.value) {
+          // 编辑角色
+          await updateRole(roleForm.id, roleForm)
+          ElMessage.success('编辑成功')
+        } else {
+          // 新增角色
+          await createRole(roleForm)
+          ElMessage.success('新增成功')
         }
-        ElMessage.success('编辑成功')
-      } else {
-        // 新增角色
-        const newRole = {
-          ...roleForm,
-          id: Date.now(),
-          createTime: new Date()
-        }
-        roleList.value.push(newRole)
-        ElMessage.success('新增成功')
+        dialogVisible.value = false
+        fetchRoleList() // 重新加载列表
+      } catch (error) {
+        console.error('保存角色失败:', error)
+        ElMessage.error('保存失败')
       }
-      dialogVisible.value = false
     }
   })
 }
@@ -400,13 +378,19 @@ const handlePermissionCheck = (data, checked) => {
 }
 
 // 保存权限配置
-const handleSavePermission = () => {
-  const checkedKeys = permissionTreeRef.value.getCheckedKeys()
-  const halfCheckedKeys = permissionTreeRef.value.getHalfCheckedKeys()
-  const allCheckedKeys = [...checkedKeys, ...halfCheckedKeys]
-  
-  ElMessage.success(`已为角色 "${currentRole.value.roleName}" 配置 ${allCheckedKeys.length} 个权限`)
-  permissionDialogVisible.value = false
+const handleSavePermission = async () => {
+  try {
+    const checkedKeys = permissionTreeRef.value.getCheckedKeys()
+    const halfCheckedKeys = permissionTreeRef.value.getHalfCheckedKeys()
+    const allCheckedKeys = [...checkedKeys, ...halfCheckedKeys]
+    
+    await setRolePermissions(currentRole.value.id, allCheckedKeys)
+    ElMessage.success(`已为角色 "${currentRole.value.roleName}" 配置 ${allCheckedKeys.length} 个权限`)
+    permissionDialogVisible.value = false
+  } catch (error) {
+    console.error('保存权限配置失败:', error)
+    ElMessage.error('保存权限配置失败')
+  }
 }
 
 // 重置角色表单

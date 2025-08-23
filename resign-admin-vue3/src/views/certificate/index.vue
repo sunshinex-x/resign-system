@@ -288,9 +288,17 @@ const getCertificateList = async () => {
       params: certQueryParams
     })
     
-    certificateList.value = response.data.records
-    certTotal.value = response.data.total
+    if (response.code === 200 && response.data) {
+      certificateList.value = response.data.records || []
+      certTotal.value = response.data.total || 0
+    } else {
+      certificateList.value = []
+      certTotal.value = 0
+      ElMessage.error('获取证书列表失败: ' + (response.message || '未知错误'))
+    }
   } catch (error) {
+    certificateList.value = []
+    certTotal.value = 0
     ElMessage.error('获取证书列表失败: ' + (error.message || '未知错误'))
   } finally {
     certLoading.value = false
@@ -307,9 +315,17 @@ const getProfileList = async () => {
       params: profileQueryParams
     })
     
-    profileList.value = response.data.records
-    profileTotal.value = response.data.total
+    if (response.code === 200 && response.data) {
+      profileList.value = response.data.records || []
+      profileTotal.value = response.data.total || 0
+    } else {
+      profileList.value = []
+      profileTotal.value = 0
+      ElMessage.error('获取Profile列表失败: ' + (response.message || '未知错误'))
+    }
   } catch (error) {
+    profileList.value = []
+    profileTotal.value = 0
     ElMessage.error('获取Profile列表失败: ' + (error.message || '未知错误'))
   } finally {
     profileLoading.value = false

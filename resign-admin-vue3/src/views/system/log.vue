@@ -57,11 +57,6 @@
         class="log-table"
         max-height="600"
       >
-        <el-table-column prop="timestamp" label="时间" width="180">
-          <template #default="{row}">
-            {{ formatDateTime(row.timestamp) }}
-          </template>
-        </el-table-column>
         <el-table-column prop="level" label="级别" width="80">
           <template #default="{row}">
             <el-tag
@@ -73,6 +68,11 @@
         </el-table-column>
         <el-table-column prop="logger" label="记录器" min-width="200" show-overflow-tooltip />
         <el-table-column prop="message" label="消息" min-width="300" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="时间" width="180">
+          <template #default="{row}">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{row}">
             <div class="table-actions">
@@ -105,7 +105,7 @@
     <!-- 日志详情对话框 -->
     <el-dialog v-model="detailVisible" title="日志详情" width="70%">
       <el-descriptions :column="1" border v-if="currentLog">
-        <el-descriptions-item label="时间">{{ formatDateTime(currentLog.timestamp) }}</el-descriptions-item>
+        <el-descriptions-item label="时间">{{ formatDateTime(currentLog.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="级别">
           <el-tag
             :type="currentLog.level === 'ERROR' ? 'danger' : (currentLog.level === 'WARN' ? 'warning' : (currentLog.level === 'INFO' ? 'success' : 'info'))"
@@ -127,6 +127,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDateTime } from '@/utils/validate'
+import { getLogList, clearLogs as clearLogsApi } from '@/api/log'
 
 // 搜索表单
 const searchForm = reactive({
@@ -150,57 +151,51 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const currentLog = ref(null)
 
-// 模拟日志数据
-const mockLogs = [
-  {
-    id: 1,
-    timestamp: new Date(),
-    level: 'INFO',
-    logger: 'com.example.resign.service.ResignTaskService',
-    message: '任务创建成功，任务ID: cb157501dace4139b24ff0793b82f318',
-    exception: null
-  },
-  {
-    id: 2,
-    timestamp: new Date(Date.now() - 60000),
-    level: 'WARN',
-    logger: 'com.example.resign.mq.ResignTaskConsumer',
-    message: '任务处理超时，将进行重试',
-    exception: null
-  },
-  {
-    id: 3,
-    timestamp: new Date(Date.now() - 120000),
-    level: 'ERROR',
-    logger: 'com.example.resign.service.FileService',
-    message: '文件下载失败',
-    exception: 'java.io.IOException: Connection timeout\n\tat java.net.SocketInputStream.read(SocketInputStream.java:116)\n\tat java.io.BufferedInputStream.fill(BufferedInputStream.java:246)'
-  }
-]
+
 
 // 获取日志列表
-const fetchLogs = () => {
+const fetchLogs = async () => {
   loading.value = true
-  
-  // 模拟API调用
-  setTimeout(() => {
-    let filteredLogs = [...mockLogs]
-    
-    // 应用搜索条件
-    if (searchForm.level) {
-      filteredLogs = filteredLogs.filter(log => log.level === searchForm.level)
-    }
-    if (searchForm.keyword) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.message.toLowerCase().includes(searchForm.keyword.toLowerCase()) ||
-        log.logger.toLowerCase().includes(searchForm.keyword.toLowerCase())
-      )
+  try {
+    const params = {
+      current: pagination.current,
+      size: pagination.size,
+      level: searchForm.level,
+      keyword: searchForm.keyword
     }
     
-    logList.value = filteredLogs
-    total.value = filteredLogs.length
+    // 添加日期范围参数
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.startTime = dateRange.value[0]
+      params.endTime = dateRange.value[1]
+    }
+    
+    const response = await getLogList(params)
+    console.log('日志API响应:', response)
+    
+    // 确保数据格式正确
+    let data = response.data
+    if (response.code === 200 && response.data) {
+      data = response.data
+    }
+    
+    // 验证数据结构
+    if (data && typeof data === 'object') {
+      logList.value = Array.isArray(data.records) ? data.records : (Array.isArray(data.list) ? data.list : [])
+      total.value = data.total || data.count || 0
+    } else {
+      console.warn('日志API返回的数据格式不正确:', data)
+      logList.value = []
+      total.value = 0
+    }
+  } catch (error) {
+    console.error('获取日志列表失败:', error)
+    ElMessage.error('获取日志列表失败')
+    logList.value = []
+    total.value = 0
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
 // 搜索
@@ -230,10 +225,15 @@ const clearLogs = () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    logList.value = []
-    total.value = 0
-    ElMessage.success('日志已清空')
+  }).then(async () => {
+    try {
+      await clearLogsApi()
+      ElMessage.success('日志已清空')
+      fetchLogs() // 重新加载日志列表
+    } catch (error) {
+      console.error('清空日志失败:', error)
+      ElMessage.error('清空日志失败')
+    }
   }).catch(() => {})
 }
 

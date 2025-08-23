@@ -217,8 +217,14 @@ const getCertificateList = async () => {
       url: '/api/certificate/certificates/IOS',
       method: 'get'
     })
-    certificateList.value = response.data
+    if (response.code === 200 && response.data) {
+      certificateList.value = response.data.records || response.data || []
+    } else {
+      certificateList.value = []
+      console.error('获取证书列表失败:', response.message)
+    }
   } catch (error) {
+    certificateList.value = []
     console.error('获取证书列表失败:', error)
   }
 }
@@ -247,12 +253,18 @@ const getList = async () => {
     })
     
     // 处理响应数据
-    if (Array.isArray(response.data)) {
-      list.value = response.data
-      total.value = response.data.length
+    if (response.code === 200 && response.data) {
+      if (Array.isArray(response.data)) {
+        list.value = response.data
+        total.value = response.data.length
+      } else {
+        list.value = response.data.records || []
+        total.value = response.data.total || 0
+      }
     } else {
-      list.value = response.data.records || []
-      total.value = response.data.total || 0
+      list.value = []
+      total.value = 0
+      console.error('获取Profile列表失败:', response.message)
     }
     
     // 为每个Profile添加证书名称

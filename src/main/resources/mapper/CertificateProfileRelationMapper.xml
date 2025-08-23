@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.resign.mapper.CertificateProfileRelationMapper">
+
+    <!-- 根据证书ID查询关联的Profile ID列表 -->
+    <select id="selectProfileIdsByCertificateId" resultType="java.lang.Long">
+        SELECT profile_id FROM certificate_profile_relation WHERE certificate_id = #{certificateId}
+    </select>
+
+    <!-- 根据Profile ID查询关联的证书ID列表 -->
+    <select id="selectCertificateIdsByProfileId" resultType="java.lang.Long">
+        SELECT certificate_id FROM certificate_profile_relation WHERE profile_id = #{profileId}
+    </select>
+
+    <!-- 根据证书ID查询所有关联记录 -->
+    <select id="selectByCertificateId" resultType="com.example.resign.entity.CertificateProfileRelation">
+        SELECT * FROM certificate_profile_relation WHERE certificate_id = #{certificateId}
+    </select>
+
+    <!-- 根据Profile ID查询所有关联记录 -->
+    <select id="selectByProfileId" resultType="com.example.resign.entity.CertificateProfileRelation">
+        SELECT * FROM certificate_profile_relation WHERE profile_id = #{profileId}
+    </select>
+
+</mapper>

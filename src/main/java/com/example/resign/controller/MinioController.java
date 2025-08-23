@@ -8,6 +8,11 @@ import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.messages.Item;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +36,7 @@ import java.io.InputStream;
 @RestController
 @RequestMapping("/api/minio")
 @RequiredArgsConstructor
+@Tag(name = "MinIO管理", description = "MinIO对象存储管理接口")
 public class MinioController {
 
     private final MinioClient minioClient;
@@ -39,6 +45,10 @@ public class MinioController {
     /**
      * 检查MinIO连接状态
      */
+    @Operation(summary = "检查MinIO连接状态", description = "检查MinIO服务连接状态和存储桶信息")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "检查完成")
+    })
     @GetMapping("/health")
     public Result<Map<String, Object>> checkHealth() {
         Map<String, Object> result = new HashMap<>();
@@ -92,6 +102,11 @@ public class MinioController {
     /**
      * 列出存储桶中的文件
      */
+    @Operation(summary = "列出存储桶文件", description = "获取MinIO存储桶中的文件列表")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "获取成功"),
+        @ApiResponse(responseCode = "400", description = "获取失败")
+    })
     @GetMapping("/files")
     public Result<List<Map<String, Object>>> listFiles() {
         try {
@@ -135,6 +150,10 @@ public class MinioController {
     /**
      * 获取MinIO配置信息
      */
+    @Operation(summary = "获取MinIO配置信息", description = "获取MinIO服务的配置信息")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "获取成功")
+    })
     @GetMapping("/config")
     public Result<Map<String, Object>> getConfig() {
         Map<String, Object> config = new HashMap<>();
@@ -149,8 +168,14 @@ public class MinioController {
     /**
      * 测试文件下载
      */
+    @Operation(summary = "测试文件下载", description = "测试从MinIO下载指定文件")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "测试成功"),
+        @ApiResponse(responseCode = "400", description = "测试失败")
+    })
     @GetMapping("/test-download/{objectName}")
-    public Result<Map<String, Object>> testDownload(@PathVariable String objectName) {
+    public Result<Map<String, Object>> testDownload(
+            @Parameter(description = "对象名称", example = "avatars-default.png") @PathVariable String objectName) {
         try {
             // 替换路径分隔符
             String fullObjectName = objectName.replace("-", "/");
@@ -194,6 +219,11 @@ public class MinioController {
     /**
      * 手动创建存储桶
      */
+    @Operation(summary = "创建存储桶", description = "手动创建MinIO存储桶")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "创建成功"),
+        @ApiResponse(responseCode = "400", description = "创建失败")
+    })
     @PostMapping("/create-bucket")
     public Result<String> createBucket() {
         try {

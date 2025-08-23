@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.resign.mapper.SysLogMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.example.resign.entity.SysLog">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="level" property="level" jdbcType="VARCHAR"/>
+        <result column="message" property="message" jdbcType="LONGVARCHAR"/>
+        <result column="logger" property="logger" jdbcType="VARCHAR"/>
+        <result column="thread" property="thread" jdbcType="VARCHAR"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="module" property="module" jdbcType="VARCHAR"/>
+        <result column="action" property="action" jdbcType="VARCHAR"/>
+        <result column="request_uri" property="requestUri" jdbcType="VARCHAR"/>
+        <result column="request_method" property="requestMethod" jdbcType="VARCHAR"/>
+        <result column="request_params" property="requestParams" jdbcType="LONGVARCHAR"/>
+        <result column="client_ip" property="clientIp" jdbcType="VARCHAR"/>
+        <result column="user_agent" property="userAgent" jdbcType="VARCHAR"/>
+        <result column="exception" property="exception" jdbcType="LONGVARCHAR"/>
+        <result column="execution_time" property="executionTime" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, level, message, logger, thread, user_id, username, module, action,
+        request_uri, request_method, request_params, client_ip, user_agent,
+        exception, execution_time, create_time
+    </sql>
+
+    <!-- 分页查询系统日志 -->
+    <select id="selectLogPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_log
+        <where>
+            <if test="level != null and level != ''">
+                AND level = #{level}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                message LIKE CONCAT('%', #{keyword}, '%')
+                OR logger LIKE CONCAT('%', #{keyword}, '%')
+                OR username LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+            <if test="module != null and module != ''">
+                AND module = #{module}
+            </if>
+            <if test="startTime != null">
+                AND create_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 日志级别统计 -->
+    <select id="selectLogStatistics" resultType="map">
+        SELECT
+        level,
+        COUNT(*) as count
+        FROM sys_log
+        <where>
+            <if test="startTime != null">
+                AND create_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        GROUP BY level
+        ORDER BY level
+    </select>
+
+    <!-- 根据ID删除日志 -->
+    <delete id="deleteById">
+        DELETE FROM sys_log WHERE id = #{id}
+    </delete>
+
+    <!-- 删除指定时间之前的日志 -->
+    <delete id="deleteLogsBefore">
+        DELETE FROM sys_log
+        WHERE create_time &lt; #{beforeTime}
+    </delete>
+
+    <!-- 批量插入日志 -->
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO sys_log (
+        level, message, logger, thread, user_id, username, module, action,
+        request_uri, request_method, request_params, client_ip, user_agent,
+        exception, execution_time, create_time
+        )
+        VALUES
+        <foreach collection="logs" item="log" separator=",">
+            (
+            #{log.level}, #{log.message}, #{log.logger}, #{log.thread},
+            #{log.userId}, #{log.username}, #{log.module}, #{log.action},
+            #{log.requestUri}, #{log.requestMethod}, #{log.requestParams},
+            #{log.clientIp}, #{log.userAgent}, #{log.exception},
+            #{log.executionTime}, #{log.createTime}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

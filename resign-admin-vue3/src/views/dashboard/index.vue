@@ -134,8 +134,8 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTaskStore } from '@/store/task'
 import { formatDateTime } from '@/utils/validate'
+import * as dashboardApi from '@/api/dashboard'
 import * as echarts from 'echarts/core'
 import { PieChart, LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
@@ -153,7 +153,6 @@ echarts.use([
 ])
 
 const router = useRouter()
-const taskStore = useTaskStore()
 
 // 图表引用
 const pieChartRef = ref(null)
@@ -294,9 +293,9 @@ const getLast7Days = () => {
 // 获取任务统计数据
 const fetchTaskStats = async () => {
   try {
-    const data = await taskStore.fetchTaskStats()
-    if (data) {
-      Object.assign(taskStats, data)
+    const response = await dashboardApi.getTaskStats()
+    if (response.code === 200 && response.data) {
+      Object.assign(taskStats, response.data)
     }
   } catch (error) {
     console.error('获取任务统计数据失败:', error)
@@ -306,9 +305,9 @@ const fetchTaskStats = async () => {
 // 获取最近任务
 const fetchRecentTasks = async () => {
   try {
-    const data = await taskStore.fetchTaskList({ current: 1, size: 5 })
-    if (data && data.records) {
-      recentTasks.value = data.records
+    const response = await dashboardApi.getRecentTasks({ page: 1, size: 5 })
+    if (response.code === 200 && response.data) {
+      recentTasks.value = response.data.list || response.data.records || []
     } else {
       recentTasks.value = []
     }

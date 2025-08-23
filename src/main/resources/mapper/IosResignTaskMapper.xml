@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.resign.mapper.IosResignTaskMapper">
+
+    <!-- 根据任务状态查询任务列表 -->
+    <select id="selectByStatus" resultType="com.example.resign.entity.IosResignTask">
+        SELECT * FROM ios_resign_task WHERE status = #{status} ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据证书ID查询任务列表 -->
+    <select id="selectByCertificateId" resultType="com.example.resign.entity.IosResignTask">
+        SELECT * FROM ios_resign_task WHERE certificate_id = #{certificateId} ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据应用名称查询任务列表 -->
+    <select id="selectByAppName" resultType="com.example.resign.entity.IosResignTask">
+        SELECT * FROM ios_resign_task WHERE app_name LIKE CONCAT('%', #{appName}, '%') ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据创建人查询任务列表 -->
+    <select id="selectByCreateBy" resultType="com.example.resign.entity.IosResignTask">
+        SELECT * FROM ios_resign_task WHERE create_by = #{createBy} ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询待处理的任务列表 -->
+    <select id="selectPendingTasks" resultType="com.example.resign.entity.IosResignTask">
+        SELECT * FROM ios_resign_task WHERE status IN ('PENDING', 'PROCESSING') ORDER BY create_time ASC
+    </select>
+
+</mapper>
