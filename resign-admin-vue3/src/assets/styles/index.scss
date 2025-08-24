@@ -524,3 +524,142 @@ body {
   max-height: 300px;
   overflow-y: auto;
 }
+
+/* 修复Element Plus子菜单弹出层样式 */
+.el-menu--popup {
+  background-color: #2c3e50 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.el-menu--popup .el-menu-item {
+  background-color: transparent !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.el-menu--popup .el-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.el-menu--popup .el-menu-item.is-active {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.el-menu--popup .el-sub-menu__title {
+  background-color: transparent !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.el-menu--popup .el-sub-menu__title:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+/* 全局去除菜单下划线样式 */
+.el-menu .el-menu-item,
+.el-menu .el-sub-menu__title,
+.el-menu .el-menu-item *,
+.el-menu .el-sub-menu__title *,
+.el-menu a,
+.el-menu a:hover,
+.el-menu a:focus,
+.el-menu a:active,
+.el-menu a:visited {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  outline: none !important;
+}
+
+.el-menu .el-menu-item::after,
+.el-menu .el-sub-menu__title::after {
+  display: none !important;
+}
+
+.el-menu .el-menu-item:focus,
+.el-menu .el-sub-menu__title:focus {
+  outline: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+/* 搜索条件模块优化样式 */
+.search-card {
+  .search-form {
+    .el-row {
+      /* 允许换行 */
+      flex-wrap: wrap;
+      
+      .el-col {
+        /* 确保在小屏幕下能够换行 */
+        min-width: 200px;
+        margin-bottom: 16px;
+        
+        /* 搜索按钮列特殊处理 */
+        &:has(.search-buttons) {
+          /* 按钮列最小宽度，防止被挤压 */
+          min-width: 180px;
+          /* 按钮列始终保持在右侧 */
+          margin-left: auto;
+          /* 如果空间不足，按钮列独占一行 */
+          flex: 0 0 auto;
+        }
+      }
+    }
+    
+    .search-buttons {
+      .el-form-item__content {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        /* 按钮不换行 */
+        flex-wrap: nowrap;
+        /* 最小宽度保证按钮显示 */
+        min-width: 160px;
+        
+        .el-button {
+          margin-left: 12px;
+          /* 防止按钮被压缩 */
+          flex-shrink: 0;
+          
+          &:first-child {
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* 响应式优化 */
+@media (max-width: 1200px) {
+  .search-card .search-form .el-row .el-col {
+    /* 中等屏幕下调整最小宽度 */
+    min-width: 180px;
+    
+    &:has(.search-buttons) {
+      min-width: 160px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .search-card .search-form .el-row .el-col {
+    /* 小屏幕下每个搜索项占满宽度 */
+    flex: 0 0 100%;
+    min-width: 100%;
+    
+    &:has(.search-buttons) {
+      flex: 0 0 100%;
+      min-width: 100%;
+      
+      .search-buttons .el-form-item__content {
+        /* 小屏幕下按钮居中显示 */
+        justify-content: center;
+      }
+    }
+  }
+}

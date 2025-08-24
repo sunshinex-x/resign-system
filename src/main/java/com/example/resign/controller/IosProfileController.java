@@ -11,9 +11,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +125,7 @@ public class IosProfileController {
         @ApiResponse(responseCode = "200", description = "查询成功")
     })
     @GetMapping("/list")
-    public Result<Map<String, Object>> getProfileList(
+    public Result<Page<IosProfile>> getProfileList(
             @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size,
             @Parameter(description = "状态") @RequestParam(value = "status", required = false) String status,
@@ -130,13 +138,7 @@ public class IosProfileController {
             Page<IosProfile> pageResult = profileService.getProfileList(
                 page, size, status, certificateId, bundleId, teamId, profileType);
             
-            Map<String, Object> data = new HashMap<>();
-            data.put("records", pageResult.getRecords());
-            data.put("total", pageResult.getTotal());
-            data.put("page", pageResult.getCurrent());
-            data.put("size", pageResult.getSize());
-            
-            return Result.success("查询Profile列表成功", data);
+            return Result.success("查询Profile列表成功", pageResult);
             
         } catch (Exception e) {
             log.error("查询Profile列表失败", e);
@@ -214,30 +216,7 @@ public class IosProfileController {
         }
     }
 
-    /**
-     * 删除Profile
-     */
-    @Operation(summary = "删除Profile", description = "删除指定的Profile")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "删除成功")
-    })
-    @DeleteMapping("/{id}")
-    public Result<Void> deleteProfile(
-            @Parameter(description = "Profile ID") @PathVariable Long id) {
-        try {
-            boolean success = profileService.deleteProfile(id);
-            
-            if (success) {
-                return Result.success("Profile删除成功", null);
-            } else {
-                return Result.error("Profile删除失败");
-            }
-            
-        } catch (Exception e) {
-            log.error("删除Profile失败", e);
-            return Result.error("删除Profile失败: " + e.getMessage());
-        }
-    }
+
 
     /**
      * 启用Profile
@@ -330,6 +309,58 @@ public class IosProfileController {
         } catch (Exception e) {
             log.error("获取即将过期Profile列表失败", e);
             return Result.error("获取即将过期Profile列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 下载Profile文件
+     */
+    @Operation(summary = "下载Profile文件", description = "根据Profile ID下载mobileprovision文件")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "下载成功")
+    })
+    @GetMapping("/download/{id}")
+    public ResponseEntity<Resource> downloadProfile(
+            @Parameter(description = "Profile ID") @PathVariable Long id) {
+        try {
+            // 获取Profile信息
+            IosProfile profile = profileService.getProfileById(id);
+            if (profile == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // 检查文件是否存在
+            File file = new File(profile.getFileUrl());
+            if (!file.exists()) {
+                log.error("Profile文件不存在: {}", profile.getFileUrl());
+                return ResponseEntity.notFound().build();
+            }
+            
+            // 创建文件资源
+            Resource resource = new FileSystemResource(file);
+            
+            // 设置文件名，使用Profile名称 + .mobileprovision后缀
+            String fileName = profile.getName() + ".mobileprovision";
+            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString())
+                    .replaceAll("\\+", "%20");
+            
+            // 设置响应头
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, 
+                    "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName);
+            headers.add(HttpHeaders.CONTENT_TYPE, "application/octet-stream");
+            
+            log.info("下载Profile文件: {} (ID: {})", fileName, id);
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(file.length())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+                    
+        } catch (Exception e) {
+            log.error("下载Profile文件失败", e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

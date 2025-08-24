@@ -43,82 +43,73 @@
     
     <!-- 权限表格 -->
     <el-card class="table-card">
-      <el-table
+      <DataTable
         ref="permissionTableRef"
         v-loading="loading"
         :data="permissionList"
+        :columns="columns"
         stripe
-        class="permission-table"
         row-key="id"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         :default-expand-all="false"
+        :show-pagination="false"
       >
-        <el-table-column prop="name" label="权限名称" min-width="200" />
-        <el-table-column prop="code" label="权限编码" min-width="200" />
-        <el-table-column prop="type" label="权限类型" width="100">
-          <template #default="{row}">
-            <el-tag :type="row.type === 'menu' ? 'primary' : (row.type === 'button' ? 'success' : 'info')">
-              {{ row.type === 'menu' ? '菜单' : (row.type === 'button' ? '按钮' : '接口') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="path" label="路径/接口" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="icon" label="图标" width="80">
-          <template #default="{row}">
-            <el-icon v-if="row.icon">
-              <component :is="row.icon" />
-            </el-icon>
-          </template>
-        </el-table-column>
-        <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="{row}">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="160">
-          <template #default="{row}">
-            {{ formatDateTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{row}">
-            <div class="table-actions">
-              <el-button
-                type="primary"
-                size="small"
-                @click="handleEdit(row)"
-              >
-                编辑
-              </el-button>
-              <el-button
-                type="success"
-                size="small"
-                @click="handleAddChild(row)"
-                v-if="row.type === 'menu'"
-              >
-                添加子权限
-              </el-button>
-              <el-button
-                :type="row.status === 1 ? 'warning' : 'success'"
-                size="small"
-                @click="handleToggleStatus(row)"
-              >
-                {{ row.status === 1 ? '禁用' : '启用' }}
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                @click="handleDelete(row)"
-              >
-                删除
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+        <template #type="{row}">
+          <el-tag :type="row.type === 'menu' ? 'primary' : (row.type === 'button' ? 'success' : 'info')">
+            {{ row.type === 'menu' ? '菜单' : (row.type === 'button' ? '按钮' : '接口') }}
+          </el-tag>
+        </template>
+        
+        <template #icon="{row}">
+          <el-icon v-if="row.icon">
+            <component :is="row.icon" />
+          </el-icon>
+        </template>
+        
+        <template #status="{row}">
+          <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+            {{ row.status === 1 ? '启用' : '禁用' }}
+          </el-tag>
+        </template>
+        
+        <template #createTime="{row}">
+          {{ formatDateTime(row.createTime) }}
+        </template>
+        
+        <template #actions="{row}">
+          <div class="table-actions">
+            <el-button
+              type="primary"
+              size="small"
+              @click="handleEdit(row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              type="success"
+              size="small"
+              @click="handleAddChild(row)"
+              v-if="row.type === 'menu'"
+            >
+              添加子权限
+            </el-button>
+            <el-button
+              :type="row.status === 1 ? 'warning' : 'success'"
+              size="small"
+              @click="handleToggleStatus(row)"
+            >
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </div>
+        </template>
+      </DataTable>
     </el-card>
     
     <!-- 权限编辑对话框 -->
@@ -178,10 +169,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPermissionList, createPermission, updatePermission, deletePermission } from '@/api/user'
 import { formatDateTime } from '@/utils/validate'
+import DataTable from '@/components/DataTable.vue'
 
 // 搜索表单
 const searchForm = reactive({
@@ -230,7 +222,60 @@ const rules = {
   ]
 }
 
-
+// 列配置
+const columns = computed(() => [
+  {
+    prop: 'name',
+    label: '权限名称',
+    minWidth: 200
+  },
+  {
+    prop: 'code',
+    label: '权限编码',
+    minWidth: 200
+  },
+  {
+    prop: 'type',
+    label: '权限类型',
+    width: 100,
+    slot: 'type'
+  },
+  {
+    prop: 'path',
+    label: '路径/接口',
+    minWidth: 150,
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'icon',
+    label: '图标',
+    width: 80,
+    slot: 'icon'
+  },
+  {
+    prop: 'sort',
+    label: '排序',
+    width: 80
+  },
+  {
+    prop: 'status',
+    label: '状态',
+    width: 80,
+    slot: 'status'
+  },
+  {
+    prop: 'createTime',
+    label: '创建时间',
+    width: 160,
+    slot: 'createTime'
+  },
+  {
+    label: '操作',
+    width: 220,
+    fixed: 'right',
+    slot: 'actions'
+  }
+])
 
 // 搜索
 const handleSearch = () => {

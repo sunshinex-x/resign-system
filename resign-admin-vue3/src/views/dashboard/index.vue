@@ -96,47 +96,43 @@
           <el-button type="primary" link @click="goToTaskList">查看更多</el-button>
         </div>
       </template>
-      <el-table :data="recentTasks" style="width: 100%">
-        <el-table-column prop="taskId" label="任务ID" width="220" show-overflow-tooltip />
-        <el-table-column prop="appType" label="应用类型" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.appType === 'IOS' ? 'primary' : (row.appType === 'ANDROID' ? 'success' : 'warning')">
-              {{ row.appType === 'IOS' ? 'iOS' : (row.appType === 'ANDROID' ? 'Android' : 'HarmonyOS') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag
-              :type="row.status === 'SUCCESS' ? 'success' : (row.status === 'FAILED' ? 'danger' : (row.status === 'PROCESSING' ? 'warning' : 'info'))">
-              {{ row.status === 'PENDING' ? '等待中' : (row.status === 'PROCESSING' ? '处理中' : (row.status === 'SUCCESS' ?
-                '成功' : '失败')) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="160">
-          <template #default="{ row }">
-            {{ formatDateTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" link @click="goToTaskDetail(row)">
-              详情
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <DataTable
+        :data="recentTasks"
+        :columns="taskColumns"
+        :show-pagination="false"
+      >
+        <template #appType="{ row }">
+          <el-tag :type="row.appType === 'IOS' ? 'primary' : 'success'">
+            {{ row.appType === 'IOS' ? 'iOS' : 'Android' }}
+          </el-tag>
+        </template>
+        <template #status="{ row }">
+          <el-tag
+            :type="row.status === 'SUCCESS' ? 'success' : (row.status === 'FAILED' ? 'danger' : (row.status === 'PROCESSING' ? 'warning' : 'info'))">
+            {{ row.status === 'PENDING' ? '等待中' : (row.status === 'PROCESSING' ? '处理中' : (row.status === 'SUCCESS' ?
+              '成功' : '失败')) }}
+          </el-tag>
+        </template>
+        <template #createTime="{ row }">
+          {{ formatDateTime(row.createTime) }}
+        </template>
+        <template #actions="{ row }">
+          <el-button type="primary" size="small" link @click="goToTaskDetail(row)">
+            详情
+          </el-button>
+        </template>
+      </DataTable>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { formatDateTime } from '@/utils/validate'
 import * as dashboardApi from '@/api/dashboard'
 import * as echarts from 'echarts/core'
+import DataTable from '@/components/DataTable.vue'
 import { PieChart, LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -188,7 +184,7 @@ const initPieChart = () => {
     legend: {
       orient: 'vertical',
       left: 10,
-      data: ['iOS', 'Android', 'HarmonyOS']
+      data: ['iOS', 'Android']
     },
     series: [
       {
@@ -216,9 +212,8 @@ const initPieChart = () => {
           show: false
         },
         data: [
-          { value: 40, name: 'iOS' },
-          { value: 35, name: 'Android' },
-          { value: 25, name: 'HarmonyOS' }
+          { value: 60, name: 'iOS' },
+          { value: 40, name: 'Android' }
         ]
       }
     ]
@@ -306,9 +301,14 @@ const fetchTaskStats = async () => {
 const fetchRecentTasks = async () => {
   try {
     const response = await dashboardApi.getRecentTasks({ page: 1, size: 5 })
+    console.log('Dashboard API Response:', response)
     if (response.code === 200 && response.data) {
-      recentTasks.value = response.data.list || response.data.records || []
+      // 尝试多种可能的数据结构
+      const taskData = response.data.list || response.data.records || response.data || []
+      console.log('Task data:', taskData)
+      recentTasks.value = Array.isArray(taskData) ? taskData : []
     } else {
+      console.warn('API返回非200状态:', response)
       recentTasks.value = []
     }
   } catch (error) {
@@ -331,6 +331,40 @@ const goToUserManagement = () => {
 const goToTaskDetail = (row) => {
   router.push(`/task/detail/${row.taskId}`)
 }
+
+// 任务列表列配置
+const taskColumns = computed(() => [
+  {
+    prop: 'taskId',
+    label: '任务ID',
+    width: 220,
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'appType',
+    label: '应用类型',
+    width: 100,
+    slot: 'appType'
+  },
+  {
+    prop: 'status',
+    label: '状态',
+    width: 100,
+    slot: 'status'
+  },
+  {
+    prop: 'createTime',
+    label: '创建时间',
+    width: 160,
+    slot: 'createTime'
+  },
+  {
+    label: '操作',
+    width: 100,
+    fixed: 'right',
+    slot: 'actions'
+  }
+])
 
 // 窗口大小变化时重新调整图表大小
 const handleResize = () => {

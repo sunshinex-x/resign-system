@@ -45,43 +45,29 @@
 
     <!-- 证书列表 -->
     <el-card>
-      <el-table v-loading="loading" :data="certificateList" style="width: 100%">
-        <el-table-column prop="name" label="证书名称" width="200" />
-        <el-table-column prop="alias" label="密钥别名" width="150" />
-        <el-table-column prop="keySize" label="密钥长度" width="100" />
-        <el-table-column prop="algorithm" label="算法" width="120" />
-        <el-table-column prop="issuer" label="颁发者" width="200" show-overflow-tooltip />
-        <el-table-column prop="subject" label="主题" width="200" show-overflow-tooltip />
-        <el-table-column prop="expiryDate" label="过期时间" width="120">
-          <template #default="scope">
-            <span :class="{ 'text-danger': isExpiringSoon(scope.row.expiryDate) }">
-              {{ scope.row.expiryDate }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="scope">
-            <el-button type="primary" size="small" @click="viewCertDetail(scope.row)">详情</el-button>
-            <el-button type="warning" size="small" @click="verifyCertificate(scope.row)">验证</el-button>
-            <el-button type="danger" size="small" @click="deleteCertificate(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.size"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+      <DataTable
+        :data="certificateList"
+        :columns="certificateColumns"
+        :loading="loading"
+        :current-page="pagination.page"
+        :page-size="pagination.size"
+        :total="pagination.total"
+        @size-change="handleSizeChange"
+        @current-change="handlePageChange"
+      >
+        <template #expiryDate="{ row }">
+          <span :class="{ 'text-danger': isExpiringSoon(row.expireDate) }">
+            {{ formatDate(row.expireDate) || '未设置' }}
+          </span>
+        </template>
+        <template #actions="{ row }">
+          <div class="table-actions">
+            <el-button type="primary" size="small" @click="viewCertDetail(row)">详情</el-button>
+            <el-button type="warning" size="small" @click="verifyCertificate(row)">验证</el-button>
+            <el-button type="danger" size="small" @click="deleteCertificate(row)">删除</el-button>
+          </div>
+        </template>
+      </DataTable>
     </el-card>
 
     <!-- 上传证书对话框 -->
@@ -98,6 +84,9 @@
         </el-form-item>
         <el-form-item label="密钥密码" prop="keyPassword">
           <el-input v-model="uploadForm.keyPassword" type="password" placeholder="请输入密钥密码" show-password />
+        </el-form-item>
+        <el-form-item label="包名">
+          <el-input v-model="uploadForm.bundleId" placeholder="请输入主应用包名（可选）" />
         </el-form-item>
         <el-form-item label="证书文件" prop="file">
           <el-upload
@@ -131,23 +120,20 @@
     <el-dialog v-model="detailDialog.visible" title="证书详情" width="700px">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="证书名称">{{ certDetail.name }}</el-descriptions-item>
-        <el-descriptions-item label="密钥别名">{{ certDetail.alias }}</el-descriptions-item>
-        <el-descriptions-item label="密钥长度">{{ certDetail.keySize }}</el-descriptions-item>
-        <el-descriptions-item label="算法">{{ certDetail.algorithm }}</el-descriptions-item>
-        <el-descriptions-item label="序列号">{{ certDetail.serialNumber }}</el-descriptions-item>
-        <el-descriptions-item label="指纹(SHA1)">{{ certDetail.sha1Fingerprint }}</el-descriptions-item>
-        <el-descriptions-item label="指纹(SHA256)">{{ certDetail.sha256Fingerprint }}</el-descriptions-item>
-        <el-descriptions-item label="指纹(MD5)">{{ certDetail.md5Fingerprint }}</el-descriptions-item>
-        <el-descriptions-item label="颁发者" :span="2">{{ certDetail.issuer }}</el-descriptions-item>
-        <el-descriptions-item label="主题" :span="2">{{ certDetail.subject }}</el-descriptions-item>
-        <el-descriptions-item label="生效时间">{{ certDetail.validFrom }}</el-descriptions-item>
+        <el-descriptions-item label="密钥别名">{{ certDetail.keyAlias }}</el-descriptions-item>
+        <el-descriptions-item label="包名">{{ certDetail.bundleId }}</el-descriptions-item>
+        <el-descriptions-item label="状态">{{ certDetail.status }}</el-descriptions-item>
+        <el-descriptions-item label="证书主题">{{ certDetail.subject || '未设置' }}</el-descriptions-item>
+        <el-descriptions-item label="签发者">{{ certDetail.issuer || '未设置' }}</el-descriptions-item>
+        <el-descriptions-item label="序列号">{{ certDetail.serialNumber || '未设置' }}</el-descriptions-item>
         <el-descriptions-item label="过期时间">
-          <span :class="{ 'text-danger': isExpiringSoon(certDetail.expiryDate) }">
-            {{ certDetail.expiryDate }}
+          <span :class="{ 'text-danger': isExpiringSoon(certDetail.expireDate) }">
+            {{ formatDate(certDetail.expireDate) || '未设置' }}
           </span>
         </el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ certDetail.createTime }}</el-descriptions-item>
-        <el-descriptions-item label="文件大小">{{ formatFileSize(certDetail.fileSize) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDate(certDetail.createTime) }}</el-descriptions-item>
+        <el-descriptions-item label="更新时间">{{ formatDate(certDetail.updateTime) }}</el-descriptions-item>
+        <el-descriptions-item label="创建人">{{ certDetail.createBy }}</el-descriptions-item>
         <el-descriptions-item label="描述" :span="2">{{ certDetail.description || '无' }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
@@ -155,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Upload } from '@element-plus/icons-vue'
 import { 
@@ -165,11 +151,23 @@ import {
   validateAndroidCertificate,
   getAndroidCertificateDetail
 } from '@/api/certificate'
+import DataTable from '@/components/DataTable.vue'
+import { createListHandler } from '@/utils/listHandler'
 
-// 响应式数据
-const loading = ref(false)
+// 创建列表处理器
+const { loading, list: certificateList, total, pagination, listHandler } = createListHandler({
+  pagination: {
+    page: 1,
+    size: 10
+  },
+  messages: {
+    success: '获取Android证书列表成功',
+    error: '获取Android证书列表失败'
+  }
+})
+
+// 其他响应式数据
 const uploadLoading = ref(false)
-const certificateList = ref([])
 const certDetail = ref({})
 
 // 搜索表单
@@ -181,13 +179,6 @@ const searchForm = reactive({
 })
 
 const dateRange = ref([])
-
-// 分页
-const pagination = reactive({
-  page: 1,
-  size: 10,
-  total: 0
-})
 
 // 上传对话框
 const uploadDialog = reactive({
@@ -205,6 +196,7 @@ const uploadForm = reactive({
   storePassword: '',
   alias: '',
   keyPassword: '',
+  bundleId: '',
   file: null,
   description: ''
 })
@@ -232,74 +224,63 @@ const uploadRules = {
   ]
 }
 
-// 获取证书列表
+// 获取证书列表的请求函数
+const fetchCertificateList = async (params) => {
+  const requestParams = {
+    ...params,
+    ...searchForm
+  }
+  if (dateRange.value && dateRange.value.length === 2) {
+    requestParams.createTimeStart = dateRange.value[0]
+    requestParams.createTimeEnd = dateRange.value[1]
+  }
+  
+  console.log('Android Certificate API Request:', requestParams)
+  const response = await getAndroidCertificateList(requestParams)
+  console.log('Android Certificate API Response:', response)
+  
+  // 直接返回原始API响应，让listHandler处理数据结构
+  return response
+}
+
+// 获取证书列表（兼容原有调用）
 const getCertificateList = async () => {
-  loading.value = true
-  try {
-    const params = {
-      page: pagination.page,
-      size: pagination.size,
-      name: searchForm.name,
-      alias: searchForm.alias,
-      createTimeStart: searchForm.createTimeStart,
-      createTimeEnd: searchForm.createTimeEnd
-    }
-    
-    const response = await getAndroidCertificateList(params)
-    if (response.code === 200 && response.data) {
-      certificateList.value = response.data.records || []
-      pagination.total = response.data.total || 0
-    } else {
-      certificateList.value = []
-      pagination.total = 0
-      console.error('获取Android证书列表失败:', response.message)
-    }
-  } catch (error) {
-    ElMessage.error('获取证书列表失败')
-  } finally {
-    loading.value = false
+  if (pagination.page === 1) {
+    await listHandler.init(fetchCertificateList)
+  } else {
+    await listHandler.refresh(fetchCertificateList)
   }
 }
 
 // 搜索
-const handleSearch = () => {
-  if (dateRange.value && dateRange.value.length === 2) {
-    searchForm.createTimeStart = dateRange.value[0]
-    searchForm.createTimeEnd = dateRange.value[1]
-  } else {
-    searchForm.createTimeStart = ''
-    searchForm.createTimeEnd = ''
-  }
-  pagination.page = 1
-  getCertificateList()
+const handleSearch = async () => {
+  await listHandler.search(fetchCertificateList)
 }
 
 // 重置搜索
-const resetSearch = () => {
-  searchForm.name = ''
-  searchForm.alias = ''
-  searchForm.createTimeStart = ''
-  searchForm.createTimeEnd = ''
+const resetSearch = async () => {
+  Object.assign(searchForm, {
+    name: '',
+    alias: '',
+    createTimeStart: '',
+    createTimeEnd: ''
+  })
   dateRange.value = []
-  pagination.page = 1
-  getCertificateList()
+  await listHandler.reset(fetchCertificateList)
 }
 
 // 刷新列表
-const refreshList = () => {
-  getCertificateList()
+const refreshList = async () => {
+  await listHandler.refresh(fetchCertificateList)
 }
 
 // 分页处理
-const handleSizeChange = (size) => {
-  pagination.size = size
-  pagination.page = 1
-  getCertificateList()
+const handleSizeChange = async (size) => {
+  await listHandler.handleSizeChange(size, fetchCertificateList)
 }
 
-const handleCurrentChange = (page) => {
-  pagination.page = page
-  getCertificateList()
+const handlePageChange = async (page) => {
+  await listHandler.handlePageChange(page, fetchCertificateList)
 }
 
 // 显示上传对话框
@@ -314,6 +295,7 @@ const resetUploadForm = () => {
   uploadForm.storePassword = ''
   uploadForm.alias = ''
   uploadForm.keyPassword = ''
+  uploadForm.bundleId = ''
   uploadForm.file = null
   uploadForm.description = ''
   
@@ -345,6 +327,7 @@ const handleUpload = async () => {
         formData.append('storePassword', uploadForm.storePassword)
         formData.append('alias', uploadForm.alias)
         formData.append('keyPassword', uploadForm.keyPassword)
+        formData.append('bundleId', uploadForm.bundleId || '')
         formData.append('file', uploadForm.file)
         formData.append('description', uploadForm.description || '')
         
@@ -424,13 +407,25 @@ const deleteCertificate = async (cert) => {
 }
 
 // 检查证书是否即将过期
-const isExpiringSoon = (expiryDate) => {
-  if (!expiryDate) return false
-  const expiry = new Date(expiryDate)
+const isExpiringSoon = (expireDate) => {
+  if (!expireDate) return false
+  const expiry = new Date(expireDate)
   const now = new Date()
   const diffTime = expiry.getTime() - now.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   return diffDays <= 30 && diffDays >= 0
+}
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 // 格式化文件大小
@@ -442,9 +437,53 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+// 表格列配置
+const certificateColumns = computed(() => [
+  {
+    prop: 'name',
+    label: '证书名称',
+    minWidth: 150,
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'keyAlias',
+    label: '密钥别名',
+    width: 120
+  },
+  {
+    prop: 'bundleId',
+    label: '包名',
+    minWidth: 180,
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'expireDate',
+    label: '过期时间',
+    width: 120,
+    slot: 'expiryDate'
+  },
+  {
+    prop: 'description',
+    label: '描述',
+    minWidth: 150,
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'createTime',
+    label: '创建时间',
+    width: 180
+  },
+  {
+    label: '操作',
+    width: 180,
+    fixed: 'right',
+    slot: 'actions'
+  }
+])
+
 // 组件挂载时获取数据
-onMounted(() => {
-  getCertificateList()
+onMounted(async () => {
+  await listHandler.init(fetchCertificateList)
 })
 </script>
 

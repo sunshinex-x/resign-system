@@ -41,62 +41,45 @@
 
     <!-- 用户表格 -->
     <el-card class="table-card">
-      <el-table v-loading="loading" :data="userList" stripe class="user-table"
-        @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column prop="id" label="用户ID" width="80" />
-      <el-table-column prop="username" label="用户名" min-width="120" />
-      <el-table-column prop="nickname" label="昵称" min-width="120" />
-      <el-table-column prop="email" label="邮箱" min-width="200" />
-      <el-table-column prop="phone" label="手机号" min-width="120" />
-      <el-table-column prop="roleName" label="角色" width="100">
-        <template #default="{ row }">
+      <DataTable
+        v-loading="loading"
+        :data="userList"
+        :columns="columns"
+        :pagination="{ page: pagination.current, size: pagination.size, total }"
+        :show-selection="true"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        @selection-change="handleSelectionChange"
+      >
+        <template #roleName="{ row }">
           <el-tag :type="row.roleName === '管理员' ? 'danger' : 'primary'">
             {{ row.roleName }}
           </el-tag>
         </template>
-      </el-table-column>
-      <el-table-column prop="status" label="状态" width="80">
-        <template #default="{ row }">
+        <template #status="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'danger'">
             {{ row.status === 1 ? '启用' : '禁用' }}
           </el-tag>
         </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="160">
-        <template #default="{ row }">
+        <template #createTime="{ row }">
           {{ formatDateTime(row.createTime) }}
         </template>
-      </el-table-column>
-      <el-table-column prop="lastLoginTime" label="最后登录" width="160">
-        <template #default="{ row }">
+        <template #lastLoginTime="{ row }">
           {{ row.lastLoginTime ? formatDateTime(row.lastLoginTime) : '从未登录' }}
         </template>
-      </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
-        <template #default="{ row }">
-          <div class="table-actions">
-            <el-button type="primary" size="small" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button :type="row.status === 1 ? 'warning' : 'success'" size="small"
-              @click="handleToggleStatus(row)">
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </div>
+        <template #actions="{ row }">
+          <el-button type="primary" size="small" @click="handleEdit(row)">
+            编辑
+          </el-button>
+          <el-button :type="row.status === 1 ? 'warning' : 'success'" size="small"
+            @click="handleToggleStatus(row)">
+            {{ row.status === 1 ? '禁用' : '启用' }}
+          </el-button>
+          <el-button type="danger" size="small" @click="handleDelete(row)">
+            删除
+          </el-button>
         </template>
-      </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination v-model:current-page="pagination.current" v-model:page-size="pagination.size"
-          :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total"
-          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-      </div>
+      </DataTable>
     </el-card>
 
     <!-- 用户编辑对话框 -->
@@ -145,12 +128,24 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDateTime } from '@/utils/validate'
-import { useUserStore } from '@/store/user'
+import { getUserList, createUser, updateUser, deleteUser, batchDeleteUsers, toggleUserStatus } from '@/api/user'
+import DataTable from '@/components/DataTable.vue'
+import { createListHandler } from '@/utils/listHandler'
 
-const userStore = useUserStore()
+// 创建列表处理器
+const { loading, list: userList, total, pagination, listHandler } = createListHandler({
+  pagination: {
+    page: 1,
+    size: 10
+  },
+  messages: {
+    success: '获取用户列表成功',
+    error: '获取用户列表失败'
+  }
+})
 
 // 搜索表单
 const searchForm = reactive({
@@ -159,16 +154,7 @@ const searchForm = reactive({
   status: ''
 })
 
-// 分页参数
-const pagination = reactive({
-  current: 1,
-  size: 10
-})
-
-// 数据
-const userList = ref([])
-const total = ref(0)
-const loading = ref(false)
+// 其他数据
 const selectedUsers = ref([])
 const roleOptions = ref([])
 
@@ -215,57 +201,49 @@ const rules = {
   ]
 }
 
-// 获取用户列表
-const fetchUserList = async () => {
-  loading.value = true
-  try {
-    const params = {
-      current: pagination.current,
-      size: pagination.size,
-      ...searchForm
-    }
+// 获取用户列表的请求函数
+const fetchUserList = async (params) => {
+  const requestParams = {
+    current: params.page || 1,
+    size: params.size || 10,
+    ...searchForm
+  }
+  
+  console.log('User API Request:', requestParams)
+  const result = await getUserList(requestParams)
+  console.log('User API Response:', result)
+  
+  // 直接返回原始API响应，让listHandler处理数据结构
+  return result
+}
 
-    const result = await userStore.fetchUserList(params)
-    // 确保result和result.data存在
-    if (result && result.data) {
-      userList.value = result.data.records || []
-      total.value = result.data.total || 0
-    } else if (result && result.records !== undefined) {
-      // 如果直接返回了分页数据
-      userList.value = result.records || []
-      total.value = result.total || 0
-    } else {
-      userList.value = []
-      total.value = 0
-    }
-  } catch (error) {
-    console.error('获取用户列表失败:', error)
-    ElMessage.error('获取用户列表失败: ' + (error.message || '未知错误'))
-    userList.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
+// 获取用户列表（兼容原有调用）
+const loadUserList = async () => {
+  if (pagination.page === 1) {
+    await listHandler.init(fetchUserList)
+  } else {
+    await listHandler.refresh(fetchUserList)
   }
 }
 
 // 搜索
-const handleSearch = () => {
-  pagination.current = 1
-  fetchUserList()
+const handleSearch = async () => {
+  await listHandler.search(fetchUserList)
 }
 
 // 重置搜索
-const resetSearch = () => {
-  Object.keys(searchForm).forEach(key => {
-    searchForm[key] = ''
+const resetSearch = async () => {
+  Object.assign(searchForm, {
+    username: '',
+    email: '',
+    status: ''
   })
-  pagination.current = 1
-  fetchUserList()
+  await listHandler.reset(fetchUserList)
 }
 
 // 刷新列表
-const refreshList = () => {
-  fetchUserList()
+const refreshList = async () => {
+  await listHandler.refresh(fetchUserList)
 }
 
 // 新增用户
@@ -294,7 +272,7 @@ const handleToggleStatus = async (row) => {
   }).then(async () => {
     try {
       const newStatus = row.status === 1 ? 0 : 1
-      await userStore.toggleUserStatus(row.id, newStatus)
+      await toggleUserStatus(row.id, newStatus)
       row.status = newStatus
       ElMessage.success(`${action}成功`)
     } catch (error) {
@@ -311,9 +289,9 @@ const handleDelete = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await userStore.deleteUserById(row.id)
+      await deleteUser(row.id)
       ElMessage.success('删除成功')
-      fetchUserList()
+      await listHandler.refresh(fetchUserList)
     } catch (error) {
       console.error('删除用户失败:', error)
     }
@@ -334,9 +312,9 @@ const handleBatchDelete = () => {
   }).then(async () => {
     try {
       const selectedIds = selectedUsers.value.map(user => user.id)
-      await userStore.batchDeleteUsers(selectedIds)
+      await batchDeleteUsers(selectedIds)
       ElMessage.success('批量删除成功')
-      fetchUserList()
+      await listHandler.refresh(fetchUserList)
     } catch (error) {
       console.error('批量删除用户失败:', error)
     }
@@ -357,15 +335,15 @@ const handleSubmit = async () => {
       try {
         if (isEdit.value) {
           // 编辑用户
-          await userStore.updateUserInfo(userForm.id, userForm)
+          await updateUser(userForm.id, userForm)
           ElMessage.success('编辑成功')
         } else {
           // 新增用户
-          await userStore.createNewUser(userForm)
+          await createUser(userForm)
           ElMessage.success('新增成功')
         }
         dialogVisible.value = false
-        fetchUserList()
+        await listHandler.refresh(fetchUserList)
       } catch (error) {
         console.error('操作失败:', error)
       }
@@ -391,15 +369,13 @@ const resetUserForm = () => {
 }
 
 // 分页大小变化
-const handleSizeChange = (val) => {
-  pagination.size = val
-  fetchUserList()
+const handleSizeChange = async (val) => {
+  await listHandler.handleSizeChange(val, fetchUserList)
 }
 
 // 当前页变化
-const handleCurrentChange = (val) => {
-  pagination.current = val
-  fetchUserList()
+const handleCurrentChange = async (val) => {
+  await listHandler.handlePageChange(val, fetchUserList)
 }
 
 // 获取角色选项
@@ -416,9 +392,23 @@ const fetchRoleOptions = async () => {
   }
 }
 
+// 列配置
+const columns = computed(() => [
+  { prop: 'id', label: '用户ID', width: 80 },
+  { prop: 'username', label: '用户名', minWidth: 120 },
+  { prop: 'nickname', label: '昵称', minWidth: 120 },
+  { prop: 'email', label: '邮箱', minWidth: 200 },
+  { prop: 'phone', label: '手机号', minWidth: 120 },
+  { prop: 'roleName', label: '角色', width: 100, slot: 'roleName' },
+  { prop: 'status', label: '状态', width: 80, slot: 'status' },
+  { prop: 'createTime', label: '创建时间', width: 160, slot: 'createTime' },
+  { prop: 'lastLoginTime', label: '最后登录', width: 160, slot: 'lastLoginTime' },
+  { prop: 'actions', label: '操作', width: 220, slot: 'actions', fixed: 'right' }
+])
+
 // 初始化
-onMounted(() => {
-  fetchUserList()
+onMounted(async () => {
+  await listHandler.init(fetchUserList)
   fetchRoleOptions()
 })
 </script>

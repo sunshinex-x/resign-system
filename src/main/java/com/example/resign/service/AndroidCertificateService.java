@@ -15,7 +15,7 @@ public interface AndroidCertificateService {
      * 上传并保存Android证书
      */
     AndroidCertificate uploadCertificate(MultipartFile file, String name, String password, 
-                                       String keyAlias, String keyPassword, String description);
+                                       String keyAlias, String keyPassword, String bundleId, String description);
 
     /**
      * 根据ID获取证书信息

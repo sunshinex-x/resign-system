@@ -36,7 +36,7 @@ public class PackageInfoDTO {
     private String appType;
 
     /**
-     * Bundle ID列表（iOS和鸿蒙可能有多个）
+     * Bundle ID列表（iOS可能有多个）
      */
     private List<String> bundleIds;
 

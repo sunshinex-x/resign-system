@@ -39,7 +39,7 @@
         <div class="right-menu">
           <el-dropdown trigger="click">
             <div class="avatar-container">
-              <el-avatar :size="30" icon="UserFilled" />
+              <el-avatar :size="30" :src="userInfo.avatar" icon="UserFilled" />
               <span class="username">{{ userInfo.nickname || userInfo.username || '管理员' }}</span>
               <el-icon><CaretBottom /></el-icon>
             </div>
@@ -286,18 +286,21 @@ const logout = async () => {
     border-radius: 10px;
     transition: all 0.3s;
     color: rgba(255, 255, 255, 0.85) !important;
+    text-decoration: none !important;
     
     &:hover {
       background-color: rgba(255, 255, 255, 0.12) !important;
       color: #ffffff !important;
       transform: translateX(4px);
+      text-decoration: none !important;
     }
     
     &.is-active {
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+      background: rgba(255, 255, 255, 0.15) !important;
       color: #ffffff !important;
-      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       transform: translateX(4px);
+      text-decoration: none !important;
       
       &::before {
         content: '';
@@ -318,25 +321,115 @@ const logout = async () => {
     border-radius: 10px;
     transition: all 0.3s;
     color: rgba(255, 255, 255, 0.85) !important;
+    text-decoration: none !important;
     
     &:hover {
       background-color: rgba(255, 255, 255, 0.12) !important;
       color: #ffffff !important;
       transform: translateX(4px);
+      text-decoration: none !important;
     }
   }
   
   :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transform: translateX(4px);
+    text-decoration: none !important;
   }
   
   :deep(.el-menu-item-group__title) {
     padding: 7px 0 7px 20px;
     color: rgba(255, 255, 255, 0.6);
     font-size: 12px;
+  }
+  
+  // 修复子菜单弹出层样式
+  :deep(.el-sub-menu__icon-arrow) {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+}
+
+/* 折叠状态下的样式修复 */
+.sidebar-container.is-collapse {
+  .sidebar-menu {
+    :deep(.el-menu-item) {
+      span {
+        display: none !important;
+      }
+    }
+    
+    :deep(.el-sub-menu__title) {
+      span {
+        display: none !important;
+      }
+    }
+  }
+}
+
+/* 修复子菜单弹出层的样式问题 */
+:deep(.el-menu--popup),
+:deep(.el-popper),
+:deep(.el-menu--popup-container) {
+  background-color: #2c3e50 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  
+  .el-menu-item {
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.12) !important;
+      color: #ffffff !important;
+    }
+    
+    &.is-active {
+      background: rgba(255, 255, 255, 0.15) !important;
+      color: #ffffff !important;
+    }
+  }
+  
+  .el-sub-menu__title {
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.12) !important;
+      color: #ffffff !important;
+    }
+  }
+}
+
+/* 下拉菜单样式优化 */
+:deep(.el-dropdown-menu) {
+  background: #ffffff !important;
+  border: 2px solid transparent !important;
+  background-image: linear-gradient(white, white), linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%) !important;
+  background-origin: border-box !important;
+  background-clip: content-box, border-box !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 25px rgba(209, 12, 12, 0.15) !important;
+  padding: 8px 0 !important;
+  
+  .el-dropdown-menu__item {
+    color: #374151 !important;
+    padding: 12px 20px !important;
+    transition: all 0.3s ease !important;
+    
+    &:hover {
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+      color: #1f2937 !important;
+    }
+    
+    &.is-divided {
+      border-top: 1px solid #e5e7eb !important;
+      margin-top: 4px !important;
+      padding-top: 12px !important;
+    }
   }
 }
 </style>

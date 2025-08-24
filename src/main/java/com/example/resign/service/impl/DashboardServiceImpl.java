@@ -66,9 +66,8 @@ public class DashboardServiceImpl implements DashboardService {
         // 这里需要根据实际的任务类型字段来统计
         // 由于当前ResignTask可能没有appType字段，我们先返回模拟数据
         // 实际项目中应该根据数据库中的appType字段进行统计
-        distribution.put("IOS", 40L);
-        distribution.put("ANDROID", 35L);
-        distribution.put("HARMONYOS", 25L);
+        distribution.put("IOS", 60L);
+        distribution.put("ANDROID", 40L);
         
         return distribution;
     }

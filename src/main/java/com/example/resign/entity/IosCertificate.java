@@ -41,6 +41,11 @@ public class IosCertificate {
     private String teamId;
 
     /**
+     * 主应用Bundle ID
+     */
+    private String bundleId;
+
+    /**
      * 证书类型：DEVELOPMENT, DISTRIBUTION, ADHOC
      */
     private String certificateType;
@@ -49,6 +54,21 @@ public class IosCertificate {
      * 证书过期时间
      */
     private LocalDateTime expireDate;
+
+    /**
+     * 证书主题名称
+     */
+    private String subject;
+
+    /**
+     * 证书签发者
+     */
+    private String issuer;
+
+    /**
+     * 证书序列号
+     */
+    private String serialNumber;
 
     /**
      * 证书描述

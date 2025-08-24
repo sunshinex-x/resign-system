@@ -150,20 +150,7 @@ public class IosProfileServiceImpl implements IosProfileService {
         return profileMapper.updateById(profile) > 0;
     }
 
-    @Override
-    public boolean deleteProfile(Long id) {
-        IosProfile profile = profileMapper.selectById(id);
-        if (profile != null) {
-            // 删除文件
-            File file = new File(profile.getFileUrl());
-            if (file.exists()) {
-                file.delete();
-            }
-            // 删除数据库记录
-            return profileMapper.deleteById(id) > 0;
-        }
-        return false;
-    }
+
 
     @Override
     public boolean enableProfile(Long id) {

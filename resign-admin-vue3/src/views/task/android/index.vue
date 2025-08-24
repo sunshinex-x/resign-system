@@ -56,45 +56,28 @@
 
     <!-- 任务列表 -->
     <el-card>
-      <el-table v-loading="loading" :data="taskList" style="width: 100%">
-        <el-table-column prop="taskId" label="任务ID" width="120" />
-        <el-table-column prop="appName" label="应用名称" width="150" />
-        <el-table-column prop="appVersion" label="应用版本" width="120" />
-        <el-table-column prop="packageName" label="包名" width="200" />
-        <el-table-column label="任务状态" width="120">
-          <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="processingTime" label="处理耗时" width="120">
-          <template #default="scope">
-            {{ scope.row.processingTime ? scope.row.processingTime + 's' : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="300" fixed="right">
-          <template #default="scope">
-            <el-button type="primary" size="small" @click="viewDetail(scope.row)">详情</el-button>
-            <el-button v-if="scope.row.status === 'PENDING'" type="success" size="small" @click="executeTask(scope.row)">执行</el-button>
-            <el-button v-if="scope.row.status === 'FAILED'" type="warning" size="small" @click="retryTask(scope.row)">重试</el-button>
-            <el-button v-if="scope.row.status === 'SUCCESS'" type="info" size="small" @click="downloadFile(scope.row)">下载</el-button>
-            <el-button type="danger" size="small" @click="deleteTask(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.size"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+      <DataTable
+        v-loading="loading"
+        :data="taskList"
+        :columns="columns"
+        :pagination="pagination"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      >
+        <template #status="{ row }">
+          <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+        </template>
+        <template #processingTime="{ row }">
+          {{ row.processingTime ? row.processingTime + 's' : '-' }}
+        </template>
+        <template #actions="{ row }">
+          <el-button type="primary" size="small" @click="viewDetail(row)">详情</el-button>
+          <el-button v-if="row.status === 'PENDING'" type="success" size="small" @click="executeTask(row)">执行</el-button>
+          <el-button v-if="row.status === 'FAILED'" type="warning" size="small" @click="retryTask(row)">重试</el-button>
+          <el-button v-if="row.status === 'SUCCESS'" type="info" size="small" @click="downloadFile(row)">下载</el-button>
+          <el-button type="danger" size="small" @click="deleteTask(row)">删除</el-button>
+        </template>
+      </DataTable>
     </el-card>
 
     <!-- 创建任务对话框 -->
@@ -205,30 +188,35 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import * as androidTaskApi from '@/api/androidTask'
 import * as certificateApi from '@/api/certificate'
+import DataTable from '@/components/DataTable.vue'
+import { createListHandler } from '@/utils/listHandler'
 
 const router = useRouter()
 
 // 响应式数据
-const loading = ref(false)
-const taskList = ref([])
-const total = ref(0)
+const { loading, list: taskList, total, pagination, listHandler } = createListHandler({
+  pagination: {
+    page: 1,
+    size: 10
+  },
+  messages: {
+    success: '获取任务列表成功',
+    error: '获取任务列表失败'
+  }
+})
+
 const searchForm = reactive({
   taskId: '',
   status: '',
   appName: ''
 })
 const dateRange = ref([])
-const pagination = reactive({
-  page: 1,
-  size: 10,
-  total: 0
-})
 
 // 创建任务相关
 const createDialogVisible = ref(false)
@@ -262,63 +250,56 @@ const cleanupForm = reactive({
   daysToKeep: 30
 })
 
-// 获取任务列表
+// 获取任务列表数据的函数
+const fetchTaskList = async (params) => {
+  const requestParams = {
+    ...params,
+    ...searchForm
+  }
+  if (dateRange.value && dateRange.value.length === 2) {
+    requestParams.startDate = dateRange.value[0]
+    requestParams.endDate = dateRange.value[1]
+  }
+  
+  const response = await androidTaskApi.getTaskList(requestParams)
+  console.log('Android Task API Response:', response)
+  
+  // 直接返回原始API响应，让listHandler处理数据结构
+  return response
+}
+
+// 兼容原有调用的函数
 const getTaskList = async () => {
-  try {
-    loading.value = true
-    const params = {
-      page: pagination.page,
-      size: pagination.size,
-      ...searchForm
-    }
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.startDate = dateRange.value[0]
-      params.endDate = dateRange.value[1]
-    }
-    
-    const response = await androidTaskApi.getTaskList(params)
-    if (response.code === 200) {
-      taskList.value = response.data.list || []
-      pagination.total = response.data.total || 0
-    } else {
-      ElMessage.error('获取任务列表失败: ' + (response.message || '未知错误'))
-    }
-  } catch (error) {
-    console.error('获取任务列表失败', error)
-    ElMessage.error('获取任务列表失败')
-  } finally {
-    loading.value = false
+  if (pagination.page === 1) {
+    await listHandler.init(fetchTaskList)
+  } else {
+    await listHandler.refresh(fetchTaskList)
   }
 }
 
 // 搜索
-const handleSearch = () => {
-  pagination.page = 1
-  getTaskList()
+const handleSearch = async () => {
+  await listHandler.search(fetchTaskList)
 }
 
 // 重置搜索
-const resetSearch = () => {
+const resetSearch = async () => {
   Object.assign(searchForm, {
     taskId: '',
     status: '',
     appName: ''
   })
   dateRange.value = []
-  pagination.page = 1
-  getTaskList()
+  await listHandler.reset(fetchTaskList)
 }
 
 // 分页处理
-const handleSizeChange = (size) => {
-  pagination.size = size
-  pagination.page = 1
-  getTaskList()
+const handleSizeChange = async (size) => {
+  await listHandler.handleSizeChange(size, fetchTaskList)
 }
 
-const handleCurrentChange = (page) => {
-  pagination.page = page
-  getTaskList()
+const handleCurrentChange = async (page) => {
+  await listHandler.handlePageChange(page, fetchTaskList)
 }
 
 // 显示创建对话框
@@ -574,12 +555,12 @@ const confirmCleanup = async () => {
 // 工具函数
 const getStatusType = (status) => {
   const statusMap = {
-    PENDING: '',
+    PENDING: 'info',
     PROCESSING: 'warning',
     SUCCESS: 'success',
     FAILED: 'danger'
   }
-  return statusMap[status] || ''
+  return statusMap[status] || 'info'
 }
 
 const getStatusText = (status) => {
@@ -599,9 +580,22 @@ const formatFileSize = (bytes) => {
   return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
 }
 
+// 列配置
+const columns = computed(() => [
+  { prop: 'taskId', label: '任务ID', width: 200 },
+  { prop: 'appName', label: '应用名称', minWidth: 150 },
+  { prop: 'appVersion', label: '应用版本', width: 120 },
+  { prop: 'versionCode', label: '构建版本', width: 120 },
+  { prop: 'packageName', label: '包名', minWidth: 200 },
+  { prop: 'status', label: '任务状态', width: 120, slot: 'status' },
+  { prop: 'processingTime', label: '处理耗时', width: 120, slot: 'processingTime' },
+  { prop: 'createTime', label: '创建时间', width: 180 },
+  { prop: 'actions', label: '操作', width: 200, slot: 'actions', fixed: 'right' }
+])
+
 // 生命周期
-onMounted(() => {
-  getTaskList()
+onMounted(async () => {
+  await getTaskList()
 })
 </script>
 

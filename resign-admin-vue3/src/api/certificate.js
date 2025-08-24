@@ -67,15 +67,15 @@ export function deleteIosCertificate(id) {
 // 获取证书关联的Profile列表
 export function getCertificateProfiles(certificateId) {
   return request({
-    url: `/api/ios/certificate/${certificateId}/profiles`,
-    method: 'get'
-  })
+    url: `/api/ios/profile/certificate/${certificateId}`,
+    method: "get",
+  });
 }
 
 // 下载Profile文件
 export function downloadProfile(profileId) {
   return request({
-    url: `/api/ios/profiles/${profileId}/download`,
+    url: `/api/ios/profile/download/${profileId}`,
     method: 'get',
     responseType: 'blob'
   })

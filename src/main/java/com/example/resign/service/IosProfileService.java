@@ -48,10 +48,7 @@ public interface IosProfileService {
      */
     boolean updateProfile(IosProfile profile);
 
-    /**
-     * 删除Profile
-     */
-    boolean deleteProfile(Long id);
+
 
     /**
      * 启用Profile

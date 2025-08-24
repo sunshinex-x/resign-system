@@ -38,7 +38,7 @@ public class ResignRequestDTO {
     private String certificatePassword;
 
     /**
-     * Profile文件列表（iOS和鸿蒙）
+     * Profile文件列表（iOS）
      */
     private List<MultipartFile> profileFiles;
 

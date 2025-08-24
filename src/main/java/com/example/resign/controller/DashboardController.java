@@ -65,7 +65,7 @@ public class DashboardController {
      *
      * @return 任务类型分布数据
      */
-    @Operation(summary = "获取任务类型分布", description = "获取iOS、Android、HarmonyOS任务数量分布")
+    @Operation(summary = "获取任务类型分布", description = "获取iOS、Android任务数量分布")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "获取成功")
     })

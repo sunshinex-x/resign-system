@@ -28,9 +28,7 @@
         <el-form-item label="Android签名工具路径">
           <el-input v-model="resignConfig.androidSignTool" placeholder="请输入Android签名工具路径" />
         </el-form-item>
-        <el-form-item label="HarmonyOS签名工具路径">
-          <el-input v-model="resignConfig.harmonySignTool" placeholder="请输入HarmonyOS签名工具路径" />
-        </el-form-item>
+
       </el-form>
     </el-card>
     
@@ -147,7 +145,7 @@ const resignConfig = reactive({
   timeoutSeconds: 1800,
   iosSignTool: '',
   androidSignTool: '',
-  harmonySignTool: ''
+
 })
 
 // MinIO配置
@@ -186,7 +184,7 @@ const systemInfo = reactive({
 })
 
 // 刷新重签名配置
-const refreshResignConfig = async () => {
+const refreshResignConfig = async (showSuccessMessage = true) => {
   try {
     const response = await getResignConfig()
     const data = response.data
@@ -197,9 +195,11 @@ const refreshResignConfig = async () => {
     resignConfig.timeoutSeconds = data.task?.timeoutSeconds || 1800
     resignConfig.iosSignTool = data.tools?.ios?.signTool || ''
     resignConfig.androidSignTool = data.tools?.android?.signTool || ''
-    resignConfig.harmonySignTool = data.tools?.harmony?.signTool || ''
+
     
-    ElMessage.success('重签名配置刷新成功')
+    if (showSuccessMessage) {
+      ElMessage.success('重签名配置刷新成功')
+    }
   } catch (error) {
     console.error('获取重签名配置失败:', error)
     ElMessage.error('获取重签名配置失败')
@@ -218,7 +218,7 @@ const saveResignConfig = async () => {
 }
 
 // 刷新MinIO配置
-const refreshMinioConfig = async () => {
+const refreshMinioConfig = async (showSuccessMessage = true) => {
   try {
     const response = await getMinioConfig()
     const data = response.data
@@ -229,7 +229,9 @@ const refreshMinioConfig = async () => {
     minioConfig.secretKey = data.secretKey || '' // 出于安全考虑，后端可能不返回密钥
     minioConfig.bucketName = data.bucketName || ''
     
-    ElMessage.success('MinIO配置刷新成功')
+    if (showSuccessMessage) {
+      ElMessage.success('MinIO配置刷新成功')
+    }
   } catch (error) {
     console.error('获取MinIO配置失败:', error)
     ElMessage.error('获取MinIO配置失败')
@@ -248,7 +250,7 @@ const saveMinioConfig = async () => {
 }
 
 // 刷新RabbitMQ配置
-const refreshRabbitConfig = async () => {
+const refreshRabbitConfig = async (showSuccessMessage = true) => {
   try {
     const response = await getRabbitConfig()
     const data = response.data
@@ -260,7 +262,9 @@ const refreshRabbitConfig = async () => {
     rabbitConfig.password = data.password || '' // 出于安全考虑，后端可能不返回密码
     rabbitConfig.virtualHost = data.virtualHost || '/'
     
-    ElMessage.success('RabbitMQ配置刷新成功')
+    if (showSuccessMessage) {
+      ElMessage.success('RabbitMQ配置刷新成功')
+    }
   } catch (error) {
     console.error('获取RabbitMQ配置失败:', error)
     ElMessage.error('获取RabbitMQ配置失败')
@@ -301,7 +305,7 @@ const testRabbitConnection = async () => {
 }
 
 // 刷新系统信息
-const refreshSystemInfo = async () => {
+const refreshSystemInfo = async (showSuccessMessage = true) => {
   try {
     const response = await getSystemInfo()
     const data = response.data
@@ -322,7 +326,9 @@ const refreshSystemInfo = async () => {
     systemInfo.processors = data.runtime?.processors || 0
     systemInfo.currentTime = data.application?.currentTime || ''
     
-    ElMessage.success('系统信息已刷新')
+    if (showSuccessMessage) {
+      ElMessage.success('系统信息已刷新')
+    }
   } catch (error) {
     console.error('获取系统信息失败:', error)
     ElMessage.error('获取系统信息失败')
@@ -331,11 +337,11 @@ const refreshSystemInfo = async () => {
 
 // 初始化
 onMounted(() => {
-  // 加载所有配置
-  refreshResignConfig()
-  refreshMinioConfig()
-  refreshRabbitConfig()
-  refreshSystemInfo()
+  // 加载所有配置，初始加载时不显示成功提示
+  refreshResignConfig(false)
+  refreshMinioConfig(false)
+  refreshRabbitConfig(false)
+  refreshSystemInfo(false)
 })
 </script>
 

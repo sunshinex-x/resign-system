@@ -50,56 +50,41 @@
     
     <!-- 日志表格 -->
     <el-card class="table-card">
-      <el-table
+      <DataTable
         v-loading="loading"
         :data="logList"
+        :columns="columns"
+        :pagination="{ current: pagination.page, size: pagination.size }"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
         stripe
-        class="log-table"
         max-height="600"
       >
-        <el-table-column prop="level" label="级别" width="80">
-          <template #default="{row}">
-            <el-tag
-              :type="row.level === 'ERROR' ? 'danger' : (row.level === 'WARN' ? 'warning' : (row.level === 'INFO' ? 'success' : 'info'))"
+        <template #level="{row}">
+          <el-tag
+            :type="row.level === 'ERROR' ? 'danger' : (row.level === 'WARN' ? 'warning' : (row.level === 'INFO' ? 'success' : 'info'))"
+          >
+            {{ row.level }}
+          </el-tag>
+        </template>
+        
+        <template #createTime="{row}">
+          {{ formatDateTime(row.createTime) }}
+        </template>
+        
+        <template #actions="{row}">
+          <div class="table-actions">
+            <el-button
+              type="primary"
+              size="small"
+              @click="showLogDetail(row)"
             >
-              {{ row.level }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="logger" label="记录器" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="message" label="消息" min-width="300" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="时间" width="180">
-          <template #default="{row}">
-            {{ formatDateTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{row}">
-            <div class="table-actions">
-              <el-button
-                type="primary"
-                size="small"
-                @click="showLogDetail(row)"
-              >
-                详情
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="pagination.current"
-          v-model:page-size="pagination.size"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+              详情
+            </el-button>
+          </div>
+        </template>
+      </DataTable>
     </el-card>
     
     <!-- 日志详情对话框 -->
@@ -124,10 +109,22 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDateTime } from '@/utils/validate'
 import { getLogList, clearLogs as clearLogsApi } from '@/api/log'
+import DataTable from '@/components/DataTable.vue'
+import { createListHandler } from '@/utils/listHandler'
+
+// 创建列表处理器
+const { loading, list: logList, total, pagination, listHandler } = createListHandler({
+  pagination: {
+    page: 1,
+    size: 20
+  },
+  successMessage: '获取日志列表成功',
+  errorMessage: '获取日志列表失败'
+})
 
 // 搜索表单
 const searchForm = reactive({
@@ -138,85 +135,94 @@ const searchForm = reactive({
 // 日期范围
 const dateRange = ref([])
 
-// 分页参数
-const pagination = reactive({
-  current: 1,
-  size: 20
-})
-
-// 数据
-const logList = ref([])
-const total = ref(0)
-const loading = ref(false)
+// 其他状态
 const detailVisible = ref(false)
 const currentLog = ref(null)
 
+// 列配置
+const columns = computed(() => [
+  {
+    prop: 'level',
+    label: '级别',
+    width: 80,
+    slot: 'level'
+  },
+  {
+    prop: 'logger',
+    label: '记录器',
+    minWidth: 200,
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'message',
+    label: '消息',
+    minWidth: 300,
+    showOverflowTooltip: true
+  },
+  {
+    prop: 'createTime',
+    label: '时间',
+    width: 180,
+    slot: 'createTime'
+  },
+  {
+    label: '操作',
+    width: 120,
+    fixed: 'right',
+    slot: 'actions'
+  }
+])
 
+// 获取日志列表的API调用函数
+const fetchLogList = async (params = {}) => {
+  const requestParams = {
+    current: params.page || 1,
+    size: params.size || 20,
+    level: searchForm.level,
+    keyword: searchForm.keyword
+  }
+  
+  // 添加日期范围参数
+  if (dateRange.value && dateRange.value.length === 2) {
+    requestParams.startTime = dateRange.value[0]
+    requestParams.endTime = dateRange.value[1]
+  }
+  
+  console.log('日志API请求参数:', requestParams)
+  const result = await getLogList(requestParams)
+  console.log('日志API响应:', result)
+  
+  // 直接返回原始API响应，让listHandler处理数据结构
+  return result
+}
 
-// 获取日志列表
+// 获取日志列表（兼容原有调用）
 const fetchLogs = async () => {
-  loading.value = true
-  try {
-    const params = {
-      current: pagination.current,
-      size: pagination.size,
-      level: searchForm.level,
-      keyword: searchForm.keyword
-    }
-    
-    // 添加日期范围参数
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.startTime = dateRange.value[0]
-      params.endTime = dateRange.value[1]
-    }
-    
-    const response = await getLogList(params)
-    console.log('日志API响应:', response)
-    
-    // 确保数据格式正确
-    let data = response.data
-    if (response.code === 200 && response.data) {
-      data = response.data
-    }
-    
-    // 验证数据结构
-    if (data && typeof data === 'object') {
-      logList.value = Array.isArray(data.records) ? data.records : (Array.isArray(data.list) ? data.list : [])
-      total.value = data.total || data.count || 0
-    } else {
-      console.warn('日志API返回的数据格式不正确:', data)
-      logList.value = []
-      total.value = 0
-    }
-  } catch (error) {
-    console.error('获取日志列表失败:', error)
-    ElMessage.error('获取日志列表失败')
-    logList.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
+  if (pagination.value.page === 1) {
+    await listHandler.init(fetchLogList)
+  } else {
+    await listHandler.refresh(fetchLogList)
   }
 }
 
 // 搜索
-const handleSearch = () => {
-  pagination.current = 1
-  fetchLogs()
+const handleSearch = async () => {
+  await listHandler.search(fetchLogList)
 }
 
 // 重置搜索
-const resetSearch = () => {
-  Object.keys(searchForm).forEach(key => {
-    searchForm[key] = ''
+const resetSearch = async () => {
+  Object.assign(searchForm, {
+    level: '',
+    keyword: ''
   })
   dateRange.value = []
-  pagination.current = 1
-  fetchLogs()
+  await listHandler.reset(fetchLogList)
 }
 
 // 刷新日志
-const refreshLogs = () => {
-  fetchLogs()
+const refreshLogs = async () => {
+  await listHandler.refresh(fetchLogList)
 }
 
 // 清空日志
@@ -229,7 +235,7 @@ const clearLogs = () => {
     try {
       await clearLogsApi()
       ElMessage.success('日志已清空')
-      fetchLogs() // 重新加载日志列表
+      await listHandler.refresh(fetchLogList) // 重新加载日志列表
     } catch (error) {
       console.error('清空日志失败:', error)
       ElMessage.error('清空日志失败')
@@ -244,20 +250,18 @@ const showLogDetail = (row) => {
 }
 
 // 分页大小变化
-const handleSizeChange = (val) => {
-  pagination.size = val
-  fetchLogs()
+const handleSizeChange = async (val) => {
+  await listHandler.handleSizeChange(val, fetchLogList)
 }
 
 // 当前页变化
-const handleCurrentChange = (val) => {
-  pagination.current = val
-  fetchLogs()
+const handleCurrentChange = async (val) => {
+  await listHandler.handlePageChange(val, fetchLogList)
 }
 
 // 初始化
-onMounted(() => {
-  fetchLogs()
+onMounted(async () => {
+  await listHandler.init(fetchLogList)
 })
 </script>
 

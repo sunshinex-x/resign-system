@@ -1,10 +1,5 @@
 <template>
-  <div class="swagger-container">
-    <div class="swagger-header">
-      <h2>API文档</h2>
-      <p>系统API接口文档，基于Swagger生成</p>
-    </div>
-    
+  <div class="swagger-container">    
     <div class="swagger-content">
       <div class="swagger-toolbar">
         <el-button type="primary" @click="openInNewTab">
@@ -141,25 +136,6 @@ onMounted(() => {
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
-}
-
-.swagger-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #e4e7ed;
-  background: #f8f9fa;
-  
-  h2 {
-    margin: 0 0 8px 0;
-    color: #303133;
-    font-size: 20px;
-    font-weight: 600;
-  }
-  
-  p {
-    margin: 0;
-    color: #606266;
-    font-size: 14px;
-  }
 }
 
 .swagger-content {

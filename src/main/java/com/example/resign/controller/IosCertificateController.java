@@ -44,12 +44,13 @@ public class IosCertificateController {
             @Parameter(description = "证书名称") @RequestParam("name") String name,
             @Parameter(description = "证书密码") @RequestParam("password") String password,
             @Parameter(description = "团队ID") @RequestParam(value = "teamId", required = false) String teamId,
+            @Parameter(description = "主应用Bundle ID") @RequestParam(value = "bundleId", required = false) String bundleId,
             @Parameter(description = "证书类型") @RequestParam(value = "certificateType", required = false) String certificateType,
             @Parameter(description = "证书描述") @RequestParam(value = "description", required = false) String description) {
         
         try {
             IosCertificate certificate = certificateService.uploadCertificate(
-                file, name, password, teamId, certificateType, description);
+                file, name, password, teamId, bundleId, certificateType, description);
             
             return Result.success("证书上传成功", certificate);
             
@@ -90,7 +91,7 @@ public class IosCertificateController {
         @ApiResponse(responseCode = "200", description = "查询成功")
     })
     @GetMapping("/list")
-    public Result<Map<String, Object>> getCertificateList(
+    public Result<Page<IosCertificate>> getCertificateList(
             @Parameter(description = "页码", example = "1") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "页大小", example = "10") @RequestParam(value = "size", defaultValue = "10") int size,
             @Parameter(description = "证书状态") @RequestParam(value = "status", required = false) String status,
@@ -100,13 +101,7 @@ public class IosCertificateController {
         try {
             Page<IosCertificate> pageResult = certificateService.getCertificateList(
                 page, size, status, teamId, certificateType);
-            
-            Map<String, Object> data = new HashMap<>();
-            data.put("data", pageResult.getRecords());
-            data.put("total", pageResult.getTotal());
-            data.put("page", pageResult.getCurrent());
-            data.put("size", pageResult.getSize());
-            return Result.success(data);
+            return Result.success("查询证书列表成功", pageResult);
             
         } catch (Exception e) {
             log.error("查询证书列表失败", e);

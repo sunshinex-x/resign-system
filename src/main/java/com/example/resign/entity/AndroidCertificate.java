@@ -46,9 +46,29 @@ public class AndroidCertificate {
     private String keyPassword;
 
     /**
+     * 主应用包名
+     */
+    private String bundleId;
+
+    /**
      * 证书过期时间
      */
     private LocalDateTime expireDate;
+
+    /**
+     * 证书主题名称
+     */
+    private String subject;
+
+    /**
+     * 证书签发者
+     */
+    private String issuer;
+
+    /**
+     * 证书序列号
+     */
+    private String serialNumber;
 
     /**
      * 证书描述
