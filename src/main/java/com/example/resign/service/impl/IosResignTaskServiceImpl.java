@@ -6,10 +6,12 @@ import com.example.resign.entity.IosCertificate;
 import com.example.resign.entity.IosProfile;
 import com.example.resign.entity.IosResignTask;
 import com.example.resign.mapper.IosResignTaskMapper;
+import com.example.resign.entity.SignConfig;
 import com.example.resign.service.IosCertificateService;
 import com.example.resign.service.IosProfileService;
 import com.example.resign.service.IosResignTaskService;
 import com.example.resign.service.ResignTaskMessageService;
+import com.example.resign.service.SignConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +50,9 @@ public class IosResignTaskServiceImpl implements IosResignTaskService {
     @Autowired
     private ResignTaskMessageService messageService;
 
+    @Autowired
+    private SignConfigService signConfigService;
+
     @Value("${file.upload.path:/tmp/uploads}")
     private String uploadPath;
 
@@ -57,15 +62,33 @@ public class IosResignTaskServiceImpl implements IosResignTaskService {
     private static final Pattern BUNDLE_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9.-]+$");
 
     @Override
-    public IosResignTask createResignTask(MultipartFile ipaFile, Long certificateId,
+    public IosResignTask createResignTask(MultipartFile ipaFile, Long signConfigId,
                                         String bundleId, String appName, String appVersion,
                                         String buildVersion, String callbackUrl, String description) {
         try {
-            // 验证证书是否存在
-            IosCertificate certificate = certificateService.getCertificateById(certificateId);
-            if (certificate == null || !"ACTIVE".equals(certificate.getStatus())) {
-                throw new RuntimeException("证书不存在或已禁用");
+            SignConfig signConfig = null;
+            
+            // 如果提供了signConfigId，直接使用
+            if (signConfigId != null) {
+                signConfig = signConfigService.getSignConfigById(signConfigId);
+                if (signConfig == null || signConfig.getStatus() != 1) {
+                    throw new RuntimeException("签名配置不存在或已禁用");
+                }
+            } else {
+                // 解析IPA文件信息获取包名
+                Map<String, Object> tempIpaInfo = parseIpaInfo(ipaFile);
+                String packageName = (String) tempIpaInfo.get("bundleId");
+                
+                if (StringUtils.hasText(packageName)) {
+                    // 根据包名自动获取或创建签名配置
+                    signConfig = signConfigService.autoGetOrCreateSignConfig(packageName, "ios");
+                } else {
+                    throw new RuntimeException("无法获取应用包名，请手动指定签名配置");
+                }
             }
+            
+            // TODO: 从signConfig的configJson中解析证书ID等信息进行验证
+            // 这里暂时跳过证书验证，因为需要先定义configJson的结构
 
             // 验证Bundle ID格式
             if (StringUtils.hasText(bundleId) && !validateBundleId(bundleId)) {
@@ -93,12 +116,13 @@ public class IosResignTaskServiceImpl implements IosResignTaskService {
 
             // 解析IPA文件信息
             Map<String, Object> ipaInfo = parseIpaInfo(ipaFile);
-
+            
             // 创建任务记录
             IosResignTask task = new IosResignTask();
             task.setTaskId(UUID.randomUUID().toString());
             task.setOriginalIpaUrl(filePath);
-            task.setCertificateId(certificateId);
+            // TODO: 需要修改数据库表结构，添加signConfigId字段
+            task.setCertificateId(signConfig.getId()); // 暂时使用certificateId字段存储signConfigId
             task.setBundleConfig(bundleId);
             task.setAppName(appName != null ? appName : (String) ipaInfo.get("appName"));
             task.setAppVersion(appVersion != null ? appVersion : (String) ipaInfo.get("appVersion"));
@@ -327,7 +351,7 @@ public class IosResignTaskServiceImpl implements IosResignTaskService {
     }
 
     @Override
-    public Page<IosResignTask> getTaskList(int page, int size, String status, Long certificateId,
+    public Page<IosResignTask> getTaskList(int page, int size, String status, Long signConfigId,
                                          String appName, String createBy) {
         Page<IosResignTask> pageParam = new Page<>(page, size);
         QueryWrapper<IosResignTask> queryWrapper = new QueryWrapper<>();
@@ -335,8 +359,8 @@ public class IosResignTaskServiceImpl implements IosResignTaskService {
         if (StringUtils.hasText(status)) {
             queryWrapper.eq("status", status);
         }
-        if (certificateId != null) {
-            queryWrapper.eq("certificate_id", certificateId);
+        if (signConfigId != null) {
+            queryWrapper.eq("certificate_id", signConfigId); // 暂时使用certificate_id字段存储signConfigId
         }
         if (StringUtils.hasText(appName)) {
             queryWrapper.like("app_name", appName);

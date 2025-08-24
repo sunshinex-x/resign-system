@@ -15,7 +15,7 @@ public interface IosCertificateService {
      * 上传并保存iOS证书
      */
     IosCertificate uploadCertificate(MultipartFile file, String name, String password, 
-                                   String teamId, String bundleId, String certificateType, String description);
+                                   String teamId, String bundleId, String certificateType, String description, List<MultipartFile> profiles);
 
     /**
      * 根据ID获取证书信息

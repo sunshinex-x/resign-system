@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.resign.mapper.SignConfigMapper">
+
+    <!-- 根据应用类型查询配置列表 -->
+    <select id="selectByAppType" resultType="com.example.resign.entity.SignConfig">
+        SELECT 
+            id,
+            app_name,
+            package_name,
+            app_type,
+            config_json,
+            description,
+            status,
+            create_time,
+            update_time,
+            create_by,
+            update_by
+        FROM sign_config
+        WHERE app_type = #{appType}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据包名和应用类型查询配置 -->
+    <select id="selectByPackageNameAndType" resultType="com.example.resign.entity.SignConfig">
+        SELECT 
+            id,
+            app_name,
+            package_name,
+            app_type,
+            config_json,
+            description,
+            status,
+            create_time,
+            update_time,
+            create_by,
+            update_by
+        FROM sign_config
+        WHERE package_name = #{packageName}
+        AND app_type = #{appType}
+        LIMIT 1
+    </select>
+
+    <!-- 根据状态查询配置列表 -->
+    <select id="selectByStatus" resultType="com.example.resign.entity.SignConfig">
+        SELECT 
+            id,
+            app_name,
+            package_name,
+            app_type,
+            config_json,
+            description,
+            status,
+            create_time,
+            update_time,
+            create_by,
+            update_by
+        FROM sign_config
+        WHERE status = #{status}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据应用名称模糊查询 -->
+    <select id="selectByAppNameLike" resultType="com.example.resign.entity.SignConfig">
+        SELECT 
+            id,
+            app_name,
+            package_name,
+            app_type,
+            config_json,
+            description,
+            status,
+            create_time,
+            update_time,
+            create_by,
+            update_by
+        FROM sign_config
+        WHERE app_name LIKE CONCAT('%', #{appName}, '%')
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

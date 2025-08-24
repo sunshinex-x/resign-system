@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.resign.entity.AndroidCertificate;
 import com.example.resign.entity.AndroidResignTask;
+import com.example.resign.entity.SignConfig;
 import com.example.resign.mapper.AndroidResignTaskMapper;
 import com.example.resign.service.AndroidCertificateService;
 import com.example.resign.service.AndroidResignTaskService;
 import com.example.resign.service.ResignTaskMessageService;
+import com.example.resign.service.SignConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +45,9 @@ public class AndroidResignTaskServiceImpl implements AndroidResignTaskService {
     @Autowired
     private ResignTaskMessageService messageService;
 
+    @Autowired
+    private SignConfigService signConfigService;
+
     @Value("${file.upload.path:/tmp/uploads}")
     private String uploadPath;
 
@@ -53,16 +58,34 @@ public class AndroidResignTaskServiceImpl implements AndroidResignTaskService {
     private static final Set<String> VALID_SIGNATURE_VERSIONS = Set.of("v1", "v2", "v1+v2");
 
     @Override
-    public AndroidResignTask createResignTask(MultipartFile apkFile, Long certificateId,
+    public AndroidResignTask createResignTask(MultipartFile apkFile, Long signConfigId,
                                             String packageName, String appName, String versionName,
                                             Integer versionCode, String signatureVersion,
                                             String callbackUrl, String description) {
         try {
-            // 验证证书是否存在
-            AndroidCertificate certificate = certificateService.getCertificateById(certificateId);
-            if (certificate == null || !"ACTIVE".equals(certificate.getStatus())) {
-                throw new RuntimeException("证书不存在或已禁用");
+            SignConfig signConfig = null;
+            
+            // 如果提供了signConfigId，直接使用
+            if (signConfigId != null) {
+                signConfig = signConfigService.getSignConfigById(signConfigId);
+                if (signConfig == null || signConfig.getStatus() != 1) {
+                    throw new RuntimeException("签名配置不存在或已禁用");
+                }
+            } else {
+                // 解析APK文件信息获取包名
+                Map<String, Object> tempApkInfo = parseApkInfo(apkFile);
+                String apkPackageName = (String) tempApkInfo.get("packageName");
+                
+                if (StringUtils.hasText(apkPackageName)) {
+                    // 根据包名自动获取或创建签名配置
+                    signConfig = signConfigService.autoGetOrCreateSignConfig(apkPackageName, "android");
+                } else {
+                    throw new RuntimeException("无法获取应用包名，请手动指定签名配置");
+                }
             }
+            
+            // TODO: 从signConfig的configJson中解析证书ID等信息进行验证
+            // 这里暂时跳过证书验证，因为需要先定义configJson的结构
 
             // 验证包名格式
             if (StringUtils.hasText(packageName) && !validatePackageName(packageName)) {
@@ -100,7 +123,8 @@ public class AndroidResignTaskServiceImpl implements AndroidResignTaskService {
             AndroidResignTask task = new AndroidResignTask();
             task.setTaskId(UUID.randomUUID().toString());
             task.setOriginalApkUrl(filePath);
-            task.setCertificateId(certificateId);
+            // TODO: 需要修改数据库表结构，添加signConfigId字段
+            task.setCertificateId(signConfig.getId()); // 暂时使用certificateId字段存储signConfigId
             task.setPackageName(packageName != null ? packageName : (String) apkInfo.get("packageName"));
             task.setAppName(appName != null ? appName : (String) apkInfo.get("appName"));
             task.setAppVersion(versionName != null ? versionName : (String) apkInfo.get("versionName"));
@@ -322,7 +346,7 @@ public class AndroidResignTaskServiceImpl implements AndroidResignTaskService {
     }
 
     @Override
-    public Page<AndroidResignTask> getTaskList(int page, int size, String status, Long certificateId,
+    public Page<AndroidResignTask> getTaskList(int page, int size, String status, Long signConfigId,
                                              String appName, String createBy) {
         Page<AndroidResignTask> pageParam = new Page<>(page, size);
         QueryWrapper<AndroidResignTask> queryWrapper = new QueryWrapper<>();
@@ -330,8 +354,8 @@ public class AndroidResignTaskServiceImpl implements AndroidResignTaskService {
         if (StringUtils.hasText(status)) {
             queryWrapper.eq("status", status);
         }
-        if (certificateId != null) {
-            queryWrapper.eq("certificate_id", certificateId);
+        if (signConfigId != null) {
+            queryWrapper.eq("certificate_id", signConfigId); // 暂时使用certificate_id字段存储signConfigId
         }
         if (StringUtils.hasText(appName)) {
             queryWrapper.like("app_name", appName);

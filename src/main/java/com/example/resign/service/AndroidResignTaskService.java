@@ -16,7 +16,7 @@ public interface AndroidResignTaskService {
      * 创建重签名任务
      *
      * @param apkFile APK文件
-     * @param certificateId 证书ID
+     * @param signConfigId 签名配置ID
      * @param packageName 包名（可选，用于修改包名）
      * @param appName 应用名称（可选，用于修改应用名称）
      * @param versionName 版本名称（可选，用于修改版本名称）
@@ -26,7 +26,7 @@ public interface AndroidResignTaskService {
      * @param description 任务描述
      * @return 创建的任务
      */
-    AndroidResignTask createResignTask(MultipartFile apkFile, Long certificateId,
+    AndroidResignTask createResignTask(MultipartFile apkFile, Long signConfigId,
                                      String packageName, String appName, String versionName,
                                      Integer versionCode, String signatureVersion,
                                      String callbackUrl, String description);
@@ -58,7 +58,7 @@ public interface AndroidResignTaskService {
      * @param createBy 创建人
      * @return 任务列表
      */
-    Page<AndroidResignTask> getTaskList(int page, int size, String status, Long certificateId,
+    Page<AndroidResignTask> getTaskList(int page, int size, String status, Long signConfigId,
                                        String appName, String createBy);
 
     /**

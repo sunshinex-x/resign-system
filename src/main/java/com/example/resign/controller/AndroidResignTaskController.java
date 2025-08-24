@@ -45,7 +45,7 @@ public class AndroidResignTaskController {
     @PostMapping("/tasks")
     public Result<AndroidResignTask> createResignTask(
             @Parameter(description = "APK文件", required = true) @RequestParam("apkFile") MultipartFile apkFile,
-            @Parameter(description = "证书ID", required = true) @RequestParam("certificateId") Long certificateId,
+            @Parameter(description = "签名配置ID") @RequestParam(value = "signConfigId", required = false) Long signConfigId,
             @Parameter(description = "包名") @RequestParam(value = "packageName", required = false) String packageName,
             @Parameter(description = "应用名称") @RequestParam(value = "appName", required = false) String appName,
             @Parameter(description = "版本名称") @RequestParam(value = "versionName", required = false) String versionName,
@@ -56,7 +56,7 @@ public class AndroidResignTaskController {
         
         try {
             AndroidResignTask task = resignTaskService.createResignTask(
-                apkFile, certificateId, packageName, appName, versionName, 
+                apkFile, signConfigId, packageName, appName, versionName, 
                 versionCode, signatureVersion, callbackUrl, description
             );
             
@@ -118,13 +118,13 @@ public class AndroidResignTaskController {
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "status", required = false) String status,
-            @RequestParam(value = "certificateId", required = false) Long certificateId,
+            @RequestParam(value = "signConfigId", required = false) Long signConfigId,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "createBy", required = false) String createBy) {
         
         try {
             Page<AndroidResignTask> taskPage = resignTaskService.getTaskList(
-                page, size, status, certificateId, appName, createBy
+                page, size, status, signConfigId, appName, createBy
             );
             
             return Result.success("获取任务列表成功", taskPage);

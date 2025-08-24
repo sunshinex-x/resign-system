@@ -48,7 +48,7 @@ public class IosResignTaskController {
     @PostMapping("/tasks")
     public Result<IosResignTask> createResignTask(
             @Parameter(description = "IPA文件", required = true) @RequestParam("ipaFile") MultipartFile ipaFile,
-            @Parameter(description = "证书ID", required = true) @RequestParam("certificateId") Long certificateId,
+            @Parameter(description = "签名配置ID") @RequestParam(value = "signConfigId", required = false) Long signConfigId,
             @Parameter(description = "Bundle ID") @RequestParam(value = "bundleId", required = false) String bundleId,
             @Parameter(description = "应用名称") @RequestParam(value = "appName", required = false) String appName,
             @Parameter(description = "应用版本") @RequestParam(value = "appVersion", required = false) String appVersion,
@@ -58,7 +58,7 @@ public class IosResignTaskController {
         
         try {
             IosResignTask task = resignTaskService.createResignTask(
-                ipaFile, certificateId, bundleId, appName, appVersion, 
+                ipaFile, signConfigId, bundleId, appName, appVersion, 
                 buildVersion, callbackUrl, description
             );
             
@@ -137,13 +137,13 @@ public class IosResignTaskController {
             @Parameter(description = "页码", example = "1") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小", example = "10") @RequestParam(value = "size", defaultValue = "10") int size,
             @Parameter(description = "任务状态") @RequestParam(value = "status", required = false) String status,
-            @Parameter(description = "证书ID") @RequestParam(value = "certificateId", required = false) Long certificateId,
+            @Parameter(description = "签名配置ID") @RequestParam(value = "signConfigId", required = false) Long signConfigId,
             @Parameter(description = "应用名称") @RequestParam(value = "appName", required = false) String appName,
             @Parameter(description = "创建人") @RequestParam(value = "createBy", required = false) String createBy) {
         
         try {
             Page<IosResignTask> taskPage = resignTaskService.getTaskList(
-                page, size, status, certificateId, appName, createBy
+                page, size, status, signConfigId, appName, createBy
             );
             
             return Result.success(taskPage);

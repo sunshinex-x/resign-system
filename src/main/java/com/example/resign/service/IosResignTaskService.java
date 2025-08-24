@@ -15,7 +15,7 @@ public interface IosResignTaskService {
     /**
      * 创建iOS重签名任务
      */
-    IosResignTask createResignTask(MultipartFile ipaFile, Long certificateId, 
+    IosResignTask createResignTask(MultipartFile ipaFile, Long signConfigId, 
                                  String bundleId, String appName, String appVersion, 
                                  String buildVersion, String callbackUrl, String description);
 
@@ -32,7 +32,7 @@ public interface IosResignTaskService {
     /**
      * 分页查询任务列表
      */
-    Page<IosResignTask> getTaskList(int page, int size, String status, Long certificateId, 
+    Page<IosResignTask> getTaskList(int page, int size, String status, Long signConfigId, 
                                   String appName, String createBy);
 
     /**

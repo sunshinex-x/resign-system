@@ -46,11 +46,12 @@ public class IosCertificateController {
             @Parameter(description = "团队ID") @RequestParam(value = "teamId", required = false) String teamId,
             @Parameter(description = "主应用Bundle ID") @RequestParam(value = "bundleId", required = false) String bundleId,
             @Parameter(description = "证书类型") @RequestParam(value = "certificateType", required = false) String certificateType,
-            @Parameter(description = "证书描述") @RequestParam(value = "description", required = false) String description) {
+            @Parameter(description = "证书描述") @RequestParam(value = "description", required = false) String description,
+            @Parameter(description = "描述文件列表") @RequestParam(value = "profiles", required = false) List<MultipartFile> profiles) {
         
         try {
             IosCertificate certificate = certificateService.uploadCertificate(
-                file, name, password, teamId, bundleId, certificateType, description);
+                file, name, password, teamId, bundleId, certificateType, description, profiles);
             
             return Result.success("证书上传成功", certificate);
             

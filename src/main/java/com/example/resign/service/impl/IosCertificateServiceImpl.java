@@ -45,7 +45,7 @@ public class IosCertificateServiceImpl implements IosCertificateService {
 
     @Override
     public IosCertificate uploadCertificate(MultipartFile file, String name, String password,
-                                          String teamId, String bundleId, String certificateType, String description) {
+                                          String teamId, String bundleId, String certificateType, String description, List<MultipartFile> profiles) {
         try {
             // 验证文件格式
             if (!file.getOriginalFilename().endsWith(".p12")) {
@@ -97,6 +97,15 @@ public class IosCertificateServiceImpl implements IosCertificateService {
 
             // 保存到数据库
             certificateMapper.insert(certificate);
+            
+            // 处理描述文件
+            if (profiles != null && !profiles.isEmpty()) {
+                for (MultipartFile profileFile : profiles) {
+                    if (profileFile != null && !profileFile.isEmpty()) {
+                        saveProfileFile(profileFile, certificate.getId());
+                    }
+                }
+            }
             
             log.info("iOS证书上传成功: {}", certificate.getName());
             return certificate;
@@ -329,6 +338,52 @@ public class IosCertificateServiceImpl implements IosCertificateService {
     /**
      * 证书信息内部类
      */
+    /**
+     * 保存描述文件
+     */
+    private void saveProfileFile(MultipartFile profileFile, Long certificateId) {
+        try {
+            // 验证文件格式
+            if (!profileFile.getOriginalFilename().endsWith(".mobileprovision")) {
+                throw new RuntimeException("只支持mobileprovision格式的描述文件");
+            }
+
+            // 生成唯一文件名
+            String fileName = UUID.randomUUID().toString() + ".mobileprovision";
+            String filePath = uploadPath + "/profiles/ios/" + fileName;
+
+            // 确保目录存在
+            File dir = new File(uploadPath + "/profiles/ios/");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // 保存文件
+            File destFile = new File(filePath);
+            profileFile.transferTo(destFile);
+
+            // 创建Profile记录
+            IosProfile profile = new IosProfile();
+            profile.setName(profileFile.getOriginalFilename());
+            profile.setFileUrl(filePath);
+            profile.setCertificateId(certificateId);
+            profile.setStatus("ACTIVE");
+            profile.setCreateTime(LocalDateTime.now());
+            profile.setUpdateTime(LocalDateTime.now());
+            profile.setCreateBy("system");
+            profile.setUpdateBy("system");
+
+            // 保存到数据库
+            profileMapper.insert(profile);
+            
+            log.info("描述文件保存成功: {}", profile.getName());
+            
+        } catch (IOException e) {
+            log.error("描述文件保存失败", e);
+            throw new RuntimeException("描述文件保存失败: " + e.getMessage());
+        }
+    }
+
     private static class CertificateInfo {
         private String subject;
         private String issuer;
