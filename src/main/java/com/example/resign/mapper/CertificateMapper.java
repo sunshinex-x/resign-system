@@ -1,7 +1,6 @@
 package com.example.resign.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.resign.entity.Certificate;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

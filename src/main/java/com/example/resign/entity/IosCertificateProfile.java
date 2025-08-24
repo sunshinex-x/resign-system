@@ -8,29 +8,27 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 任务Profile关联实体
+ * 证书与Profile关联表实体类
  */
 @Data
-@TableName("task_profile")
-public class TaskProfile {
+@TableName("ios_certificate_profile")
+public class IosCertificateProfile {
 
+    /**
+     * 关联ID
+     */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 任务ID
+     * iOS证书ID
      */
-    private String taskId;
+    private Long certificateId;
 
     /**
-     * Profile ID
+     * iOS Profile ID
      */
     private Long profileId;
-
-    /**
-     * Bundle ID
-     */
-    private String bundleId;
 
     /**
      * 创建时间

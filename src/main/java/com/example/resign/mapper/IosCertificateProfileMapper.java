@@ -1,7 +1,7 @@
 package com.example.resign.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.resign.entity.CertificateProfileRelation;
+import com.example.resign.entity.IosCertificateProfile;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -11,7 +11,7 @@ import java.util.List;
  * 证书与Profile关联表Mapper接口
  */
 @Mapper
-public interface CertificateProfileRelationMapper extends BaseMapper<CertificateProfileRelation> {
+public interface IosCertificateProfileMapper extends BaseMapper<IosCertificateProfile> {
 
     /**
      * 根据证书ID查询关联的Profile ID列表
@@ -26,10 +26,10 @@ public interface CertificateProfileRelationMapper extends BaseMapper<Certificate
     /**
      * 根据证书ID查询所有关联记录
      */
-    List<CertificateProfileRelation> selectByCertificateId(@Param("certificateId") Long certificateId);
+    List<IosCertificateProfile> selectByCertificateId(@Param("certificateId") Long certificateId);
 
     /**
      * 根据Profile ID查询所有关联记录
      */
-    List<CertificateProfileRelation> selectByProfileId(@Param("profileId") Long profileId);
+    List<IosCertificateProfile> selectByProfileId(@Param("profileId") Long profileId);
 }
